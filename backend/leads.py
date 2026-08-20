@@ -1,4 +1,3 @@
-from datetime import datetime
 import uuid
 
 from .database import get_db, now
@@ -18,6 +17,19 @@ class LeadManager:
         created_at = now()
 
         with get_db() as db:
+
+            # Make sure older databases have updated_at
+            columns = db.execute(
+                "PRAGMA table_info(leads)"
+            ).fetchall()
+
+            column_names = [column["name"] for column in columns]
+
+            if "updated_at" not in column_names:
+                db.execute(
+                    "ALTER TABLE leads ADD COLUMN updated_at TEXT"
+                )
+
             db.execute(
                 """
                 INSERT INTO leads
@@ -58,6 +70,7 @@ class LeadManager:
     def get_lead(self, lead_id):
 
         with get_db() as db:
+
             row = db.execute(
                 """
                 SELECT *
@@ -75,6 +88,7 @@ class LeadManager:
     def list_leads(self):
 
         with get_db() as db:
+
             rows = db.execute(
                 """
                 SELECT *
@@ -85,52 +99,50 @@ class LeadManager:
 
         return [dict(row) for row in rows]
 
-    def update_lead(self, lead_id, **updates):
-
-        allowed = {
-            "name",
-            "phone",
-            "email",
-            "business",
-            "requirement",
-            "status",
-            "score",
-            "ai_analysis",
-            "follow_up"
-        }
-
-        clean_updates = {
-            key: value
-            for key, value in updates.items()
-            if key in allowed
-        }
-
-        if not clean_updates:
-            return self.get_lead(lead_id)
-
-        clean_updates["updated_at"] = now()
-
-        set_clause = ", ".join(
-            f"{key} = ?"
-            for key in clean_updates
-        )
-
-        values = list(clean_updates.values())
-        values.append(lead_id)
+    def update_lead(
+        self,
+        lead_id,
+        status=None,
+        score=None,
+        ai_analysis=None,
+        follow_up=None
+    ):
 
         with get_db() as db:
 
-            cursor = db.execute(
-                f"""
-                UPDATE leads
-                SET {set_clause}
-                WHERE id = ?
-                """,
-                values
-            )
+            updates = []
+            values = []
 
-            if cursor.rowcount == 0:
-                return None
+            if status is not None:
+                updates.append("status = ?")
+                values.append(status)
+
+            if score is not None:
+                updates.append("score = ?")
+                values.append(score)
+
+            if ai_analysis is not None:
+                updates.append("ai_analysis = ?")
+                values.append(ai_analysis)
+
+            if follow_up is not None:
+                updates.append("follow_up = ?")
+                values.append(follow_up)
+
+            if updates:
+                updates.append("updated_at = ?")
+                values.append(now())
+
+                values.append(lead_id)
+
+                db.execute(
+                    f"""
+                    UPDATE leads
+                    SET {", ".join(updates)}
+                    WHERE id = ?
+                    """,
+                    values
+                )
 
         return self.get_lead(lead_id)
 
