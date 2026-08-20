@@ -1,13 +1,22 @@
-﻿import sqlite3
+﻿```python
+import sqlite3
 import uuid
 from datetime import datetime
 from pathlib import Path
 from contextlib import contextmanager
 
 
+# ============================================================
+# DATABASE CONFIG
+# ============================================================
+
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "control_tower.db"
 
+
+# ============================================================
+# HELPERS
+# ============================================================
 
 def new_id():
     return uuid.uuid4().hex[:8]
@@ -16,6 +25,10 @@ def new_id():
 def now():
     return datetime.now().isoformat()
 
+
+# ============================================================
+# DATABASE CONNECTION
+# ============================================================
 
 @contextmanager
 def get_db():
@@ -36,11 +49,17 @@ def get_db():
         connection.close()
 
 
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
 def init_db():
 
     with get_db() as db:
 
-        # ---------------- CLIENTS ----------------
+        # ----------------------------------------------------
+        # CLIENTS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS clients (
@@ -52,7 +71,9 @@ def init_db():
             )
         """)
 
-        # ---------------- AGENTS ----------------
+        # ----------------------------------------------------
+        # AGENTS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS agents (
@@ -64,7 +85,9 @@ def init_db():
             )
         """)
 
-        # ---------------- TASKS ----------------
+        # ----------------------------------------------------
+        # TASKS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
@@ -77,7 +100,9 @@ def init_db():
             )
         """)
 
-        # ---------------- WORKFLOWS ----------------
+        # ----------------------------------------------------
+        # WORKFLOWS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS workflows (
@@ -90,7 +115,9 @@ def init_db():
             )
         """)
 
-        # ---------------- WORKFLOW STEPS ----------------
+        # ----------------------------------------------------
+        # WORKFLOW STEPS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS workflow_steps (
@@ -102,7 +129,9 @@ def init_db():
             )
         """)
 
-        # ---------------- LEADS ----------------
+        # ----------------------------------------------------
+        # LEADS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS leads (
@@ -121,33 +150,37 @@ def init_db():
             )
         """)
 
-        # ---------------- LEADS MIGRATION ----------------
-        # Adds updated_at to old databases that were created
-        # before this column existed.
+        # ----------------------------------------------------
+        # IMPORTANT MIGRATION
+        #
+        # Older Render databases may already have the leads
+        # table without updated_at.
+        # ----------------------------------------------------
 
         lead_columns = db.execute(
             "PRAGMA table_info(leads)"
         ).fetchall()
 
-        lead_column_names = [
+        lead_column_names = {
             column["name"] for column in lead_columns
-        ]
+        }
 
         if "updated_at" not in lead_column_names:
 
-            db.execute(
-                "ALTER TABLE leads ADD COLUMN updated_at TEXT"
-            )
+            db.execute("""
+                ALTER TABLE leads
+                ADD COLUMN updated_at TEXT
+            """)
 
-            db.execute(
-                """
+            db.execute("""
                 UPDATE leads
                 SET updated_at = created_at
                 WHERE updated_at IS NULL
-                """
-            )
+            """)
 
-        # ---------------- PROPOSALS ----------------
+        # ----------------------------------------------------
+        # PROPOSALS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS proposals (
@@ -164,7 +197,9 @@ def init_db():
             )
         """)
 
-        # ---------------- PAYMENTS ----------------
+        # ----------------------------------------------------
+        # PAYMENTS
+        # ----------------------------------------------------
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS payments (
@@ -179,7 +214,9 @@ def init_db():
             )
         """)
 
-        # ---------------- DEFAULT AGENT ----------------
+        # ----------------------------------------------------
+        # DEFAULT AGENT
+        # ----------------------------------------------------
 
         existing_agent = db.execute(
             "SELECT id FROM agents LIMIT 1"
@@ -201,3 +238,4 @@ def init_db():
                     now()
                 )
             )
+```
