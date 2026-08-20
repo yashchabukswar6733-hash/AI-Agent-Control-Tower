@@ -116,9 +116,36 @@ def init_db():
                 score INTEGER,
                 ai_analysis TEXT,
                 follow_up TEXT,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                updated_at TEXT
             )
         """)
+
+        # ---------------- LEADS MIGRATION ----------------
+        # Adds updated_at to old databases that were created
+        # before this column existed.
+
+        lead_columns = db.execute(
+            "PRAGMA table_info(leads)"
+        ).fetchall()
+
+        lead_column_names = [
+            column["name"] for column in lead_columns
+        ]
+
+        if "updated_at" not in lead_column_names:
+
+            db.execute(
+                "ALTER TABLE leads ADD COLUMN updated_at TEXT"
+            )
+
+            db.execute(
+                """
+                UPDATE leads
+                SET updated_at = created_at
+                WHERE updated_at IS NULL
+                """
+            )
 
         # ---------------- PROPOSALS ----------------
 
