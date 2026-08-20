@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Agent Control Tower</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b1020;
+            color: #f5f7ff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 30px;
+        }
+
+        h2 {
+            margin-bottom: 18px;
+        }
+
+        .subtitle {
+            color: #8f9bb7;
+            margin-top: 6px;
+        }
+
+        .online {
+            background: #123d2a;
+            color: #55e69b;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .offline {
+            background: #461c24;
+            color: #ff7777;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            background: #121a2d;
+            border: 1px solid #25304a;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-title {
+            color: #8f9bb7;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #121a2d;
+            border: 1px solid #25304a;
+            border-radius: 16px;
+            padding: 22px;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .item {
+            background: #0d1425;
+            border: 1px solid #222d45;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .item-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: #8f9bb7;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 9px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #263149;
+        }
+
+        .completed,
+        .qualified,
+        .active {
+            color: #55e69b;
+            background: #123d2a;
+        }
+
+        .running {
+            color: #ffd166;
+            background: #493c12;
+        }
+
+        .pending,
+        .new {
+            color: #9db4ff;
+            background: #202d52;
+        }
+
+        .failed {
+            color: #ff7777;
+            background: #461c24;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #536dfe;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .danger {
+            background: #9b3445;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            background: #0b1020;
+            border: 1px solid #303b57;
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #536dfe;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #aeb9d0;
+            font-size: 13px;
+        }
+
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        .result {
+            margin-top: 12px;
+            background: #080d19;
+            padding: 12px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow: auto;
+            font-size: 12px;
+            color: #cbd5ef;
+        }
+
+        .workflow-step {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #222d45;
+        }
+
+        .empty {
+            color: #7f8ba5;
+            font-size: 14px;
+        }
+
+        #message {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .lead-score {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .section-description {
+            color: #8f9bb7;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .refresh-button {
+            background: #263149;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 1000px) {
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <header>
+
+        <div>
+
+            <h1>AI Agent Control Tower</h1>
+
+            <div class="subtitle">
+                AI Operations & Lead Automation Platform
+            </div>
+
+        </div>
+
+        <div id="connection" class="online">
+            ● Checking Backend...
+        </div>
+
+    </header>
+
+
+    <div id="message"></div>
+
+
+    <!-- DASHBOARD STATS -->
+
+    <section class="stats">
+
+        <div class="stat">
+
+            <div class="stat-title">
+                TOTAL CLIENTS
+            </div>
+
+            <div id="totalClients" class="stat-value">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                TOTAL AGENTS
+            </div>
+
+            <div id="totalAgents" class="stat-value">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                ACTIVE AGENTS
+            </div>
+
+            <div id="activeAgents" class="stat-value">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                TOTAL TASKS
+            </div>
+
+            <div id="totalTasks" class="stat-value">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                COMPLETED TASKS
+            </div>
+
+            <div id="completedTasks" class="stat-value">
+                0
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="grid">
+
+
+        <!-- CLIENT CREATION -->
+
+        <div class="card">
+
+            <h2>Create Client</h2>
+
+            <div class="section-description">
+                Add a business to your AI operations.
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Client Name
+                </label>
+
+                <input
+                    id="clientName"
+                    placeholder="Example: Rahul Sharma"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Company
+                </label>
+
+                <input
+                    id="clientCompany"
+                    placeholder="Example: Sharma Interiors"
+                >
+
+            </div>
+
+
+            <button onclick="createClient()">
+                + Create Client
+            </button>
+
+        </div>
+
+
+        <!-- CREATE WORKFLOW -->
+
+        <div class="card">
+
+            <h2>Create AI Workflow</h2>
+
+            <div class="section-description">
+                Give your AI agents a business objective.
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Client
+                </label>
+
+                <select id="clientSelect">
+
+                    <option value="">
+                        Loading clients...
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Business Goal
+                </label>
+
+                <textarea
+                    id="workflowGoal"
+                    placeholder="Example: Create a market research report for AI automation services."
+                ></textarea>
+
+            </div>
+
+
+            <button onclick="createWorkflow()">
+                + Create Workflow
+            </button>
+
+        </div>
+
+
+        <!-- CLIENTS -->
+
+        <div class="card">
+
+            <h2>Clients</h2>
+
+            <div class="section-description">
+                Businesses connected to your Control Tower.
+            </div>
+
+            <div id="clientsList">
+
+                <div class="empty">
+                    Loading...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- AGENTS -->
+
+        <div class="card">
+
+            <h2>AI Agents</h2>
+
+            <div class="section-description">
+                Autonomous workers available for tasks.
+            </div>
+
+            <div id="agentsList">
+
+                <div class="empty">
+                    Loading...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- TASKS -->
+
+        <div class="card">
+
+            <h2>Recent Tasks</h2>
+
+            <div class="section-description">
+                AI tasks executed by your agents.
+            </div>
+
+            <div id="tasksList">
+
+                <div class="empty">
+                    Loading...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- AI LEAD MANAGEMENT -->
+
+        <div class="card">
+
+            <h2>AI Lead Management</h2>
+
+            <div class="section-description">
+                Capture and qualify incoming customer enquiries.
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Lead Name *
+                </label>
+
+                <input
+                    id="leadName"
+                    placeholder="Rahul Sharma"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Phone *
+                </label>
+
+                <input
+                    id="leadPhone"
+                    placeholder="9876543210"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Email
+                </label>
+
+                <input
+                    id="leadEmail"
+                    placeholder="rahul@example.com"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Business
+                </label>
+
+                <input
+                    id="leadBusiness"
+                    placeholder="Sharma Interiors"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+                    Customer Requirement *
+                </label>
+
+                <textarea
+                    id="leadRequirement"
+                    placeholder="What does the customer need?"
+                ></textarea>
+
+            </div>
+
+
+            <button onclick="createLead()">
+                + Capture Lead
+            </button>
+
+        </div>
+
+
+        <!-- LEADS -->
+
+        <div class="card">
+
+            <h2>Incoming Leads</h2>
+
+            <div class="section-description">
+                AI-qualified prospects and follow-up status.
+            </div>
+
+
+            <button
+                class="refresh-button"
+                onclick="loadLeads()"
+            >
+                ↻ Refresh Leads
+            </button>
+
+
+            <div id="leadsList">
+
+                <div class="empty">
+                    No leads yet.
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- WORKFLOWS -->
+
+        <div class="card full">
+
+            <h2>AI Workflows</h2>
+
+            <div class="section-description">
+                Multi-step business automation pipelines.
+            </div>
+
+
+            <button
+                class="refresh-button"
+                onclick="loadDashboard()"
+            >
+                ↻ Refresh
+            </button>
+
+
+            <div id="workflowsList">
+
+                <div class="empty">
+                    Loading...
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+
+
+const API = "http://127.0.0.1:8000";
+
+
+/* =========================
+   MESSAGE
+========================= */
+
+function showMessage(
+    text,
+    success = true
+) {
+
+    const box =
+        document.getElementById("message");
+
+    box.style.display = "block";
+
+    box.textContent = text;
+
+    box.style.background =
+        success
+            ? "#123d2a"
+            : "#461c24";
+
+    box.style.color =
+        success
+            ? "#55e69b"
+            : "#ff7777";
+
+    setTimeout(
+        () => {
+            box.style.display = "none";
+        },
+        5000
+    );
+}
+
+
+/* =========================
+   API
+========================= */
+
+async function api(
+    url,
+    options = {}
+) {
+
+    const response =
+        await fetch(
+            API + url,
+            options
+        );
+
+
+    if (!response.ok) {
+
+        const errorText =
+            await response.text();
+
+        throw new Error(
+            `HTTP ${response.status}: ${errorText}`
+        );
+    }
+
+
+    return await response.json();
+}
+
+
+/* =========================
+   DASHBOARD
+========================= */
+
+async function loadDashboard() {
+
+    try {
+
+        const data =
+            await api("/dashboard");
+
+
+        document
+            .getElementById("connection")
+            .textContent =
+            "● Backend Online";
+
+
+        document
+            .getElementById("connection")
+            .className =
+            "online";
+
+
+        document
+            .getElementById("totalClients")
+            .textContent =
+            data.total_clients || 0;
+
+
+        document
+            .getElementById("totalAgents")
+            .textContent =
+            data.total_agents || 0;
+
+
+        document
+            .getElementById("activeAgents")
+            .textContent =
+            data.active_agents || 0;
+
+
+        document
+            .getElementById("totalTasks")
+            .textContent =
+            data.total_tasks || 0;
+
+
+        document
+            .getElementById("completedTasks")
+            .textContent =
+            data.completed_tasks || 0;
+
+
+        renderClients(
+            data.clients || []
+        );
+
+
+        renderAgents(
+            data.agents || []
+        );
+
+
+        renderTasks(
+            data.tasks || []
+        );
+
+
+        renderWorkflows(
+            data.workflows || []
+        );
+
+
+        loadClientSelect(
+            data.clients || []
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
+
+        document
+            .getElementById("connection")
+            .textContent =
+            "● Backend Offline";
+
+
+        document
+            .getElementById("connection")
+            .className =
+            "online offline";
+    }
+}
+
+
+/* =========================
+   CLIENT SELECT
+========================= */
+
+function loadClientSelect(
+    clients
+) {
+
+    const select =
+        document.getElementById(
+            "clientSelect"
+        );
+
+
+    select.innerHTML = "";
+
+
+    if (!clients.length) {
+
+        select.innerHTML =
+            `
+            <option value="">
+                No clients available
+            </option>
+            `;
+
+        return;
+    }
+
+
+    clients.forEach(
+        client => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                client.id;
+
+
+            option.textContent =
+                `${client.name} — ${client.company}`;
+
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+}
+
+
+/* =========================
+   CREATE CLIENT
+========================= */
+
+async function createClient() {
+
+    const name =
+        document
+            .getElementById(
+                "clientName"
+            )
+            .value
+            .trim();
+
+
+    const company =
+        document
+            .getElementById(
+                "clientCompany"
+            )
+            .value
+            .trim();
+
+
+    if (!name || !company) {
+
+        showMessage(
+            "Client name and company are required.",
+            false
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+
+        params.append(
+            "name",
+            name
+        );
+
+
+        params.append(
+            "company",
+            company
+        );
+
+
+        await api(
+            "/clients?" +
+            params.toString(),
+            {
+                method: "POST"
+            }
+        );
+
+
+        showMessage(
+            "Client created successfully."
+        );
+
+
+        document
+            .getElementById(
+                "clientName"
+            )
+            .value = "";
+
+
+        document
+            .getElementById(
+                "clientCompany"
+            )
+            .value = "";
+
+
+        await loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "Failed to create client: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+/* =========================
+   CLIENTS
+========================= */
+
+function renderClients(
+    clients
+) {
+
+    const container =
+        document.getElementById(
+            "clientsList"
+        );
+
+
+    if (!clients.length) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No clients yet.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        clients.map(
+            client => `
+
+            <div class="item">
+
+                <div class="item-title">
+                    ${escapeHtml(client.name)}
+                </div>
+
+                <div class="muted">
+                    ${escapeHtml(client.company)}
+                </div>
+
+                <span class="status ${escapeHtml(client.status)}">
+                    ${escapeHtml(client.status)}
+                </span>
+
+            </div>
+
+        `
+        ).join("");
+}
+
+
+/* =========================
+   AGENTS
+========================= */
+
+function renderAgents(
+    agents
+) {
+
+    const container =
+        document.getElementById(
+            "agentsList"
+        );
+
+
+    if (!agents.length) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No agents yet.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        agents.map(
+            agent => `
+
+            <div class="item">
+
+                <div class="item-title">
+                    ${escapeHtml(agent.name)}
+                </div>
+
+                <div class="muted">
+                    Role:
+                    ${escapeHtml(agent.role)}
+                </div>
+
+                <span class="status ${escapeHtml(agent.status)}">
+                    ${escapeHtml(agent.status)}
+                </span>
+
+            </div>
+
+        `
+        ).join("");
+}
+
+
+/* =========================
+   TASKS
+========================= */
+
+function renderTasks(
+    tasks
+) {
+
+    const container =
+        document.getElementById(
+            "tasksList"
+        );
+
+
+    if (!tasks.length) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No tasks yet.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        tasks.map(
+            task => `
+
+            <div class="item">
+
+                <div class="item-title">
+                    ${escapeHtml(task.description)}
+                </div>
+
+                <div class="muted">
+                    Agent:
+                    ${escapeHtml(task.agent)}
+                </div>
+
+                <span class="status ${escapeHtml(task.status)}">
+                    ${escapeHtml(task.status)}
+                </span>
+
+                ${
+                    task.result
+                    ?
+                    `
+                    <div class="result">
+                        ${escapeHtml(task.result)}
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+        `
+        ).join("");
+}
+
+
+/* =========================
+   WORKFLOWS
+========================= */
+
+function renderWorkflows(
+    workflows
+) {
+
+    const container =
+        document.getElementById(
+            "workflowsList"
+        );
+
+
+    if (!workflows.length) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No workflows yet.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        workflows.map(
+            workflow => `
+
+            <div class="item">
+
+                <div class="item-title">
+                    ${escapeHtml(workflow.goal)}
+                </div>
+
+                <div class="muted">
+                    Workflow ID:
+                    ${escapeHtml(workflow.id)}
+                </div>
+
+                <div class="muted">
+                    Client:
+                    ${escapeHtml(workflow.client_id)}
+                </div>
+
+                <span class="status ${escapeHtml(workflow.status)}">
+                    ${escapeHtml(workflow.status)}
+                </span>
+
+
+                <div style="margin-top:15px">
+
+                    ${(workflow.steps || [])
+                        .map(
+                            step => `
+
+                            <div class="workflow-step">
+
+                                <span>
+                                    ${escapeHtml(step.name)}
+                                </span>
+
+                                <span class="status ${escapeHtml(step.status)}">
+                                    ${escapeHtml(step.status)}
+                                </span>
+
+                            </div>
+
+                        `
+                        )
+                        .join("")
+                    }
+
+                </div>
+
+
+                ${
+                    workflow.status === "pending"
+                    ?
+                    `
+                    <button
+                        style="margin-top:15px"
+                        onclick="executeWorkflow('${escapeHtml(workflow.id)}')"
+                    >
+                        Execute Workflow
+                    </button>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    workflow.result
+                    ?
+                    `
+                    <div class="result">
+                        ${escapeHtml(workflow.result)}
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+        `
+        ).join("");
+}
+
+
+/* =========================
+   CREATE WORKFLOW
+========================= */
+
+async function createWorkflow() {
+
+    const clientId =
+        document
+            .getElementById(
+                "clientSelect"
+            )
+            .value;
+
+
+    const goal =
+        document
+            .getElementById(
+                "workflowGoal"
+            )
+            .value
+            .trim();
+
+
+    if (!clientId) {
+
+        showMessage(
+            "Please select a client.",
+            false
+        );
+
+        return;
+    }
+
+
+    if (!goal) {
+
+        showMessage(
+            "Please enter a business goal.",
+            false
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+
+        params.append(
+            "client_id",
+            clientId
+        );
+
+
+        params.append(
+            "goal",
+            goal
+        );
+
+
+        await api(
+            "/workflows?" +
+            params.toString(),
+            {
+                method: "POST"
+            }
+        );
+
+
+        showMessage(
+            "Workflow created successfully."
+        );
+
+
+        document
+            .getElementById(
+                "workflowGoal"
+            )
+            .value = "";
+
+
+        await loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "Failed to create workflow: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+/* =========================
+   EXECUTE WORKFLOW
+========================= */
+
+async function executeWorkflow(
+    workflowId
+) {
+
+    showMessage(
+        "Workflow execution started..."
+    );
+
+
+    try {
+
+        await api(
+            `/workflows/${workflowId}/execute`,
+            {
+                method: "POST"
+            }
+        );
+
+
+        showMessage(
+            "Workflow executed successfully."
+        );
+
+
+        await loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "Workflow execution failed: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+/* =========================
+   CREATE LEAD
+========================= */
+
+async function createLead() {
+
+    const name =
+        document
+            .getElementById(
+                "leadName"
+            )
+            .value
+            .trim();
+
+
+    const phone =
+        document
+            .getElementById(
+                "leadPhone"
+            )
+            .value
+            .trim();
+
+
+    const email =
+        document
+            .getElementById(
+                "leadEmail"
+            )
+            .value
+            .trim();
+
+
+    const business =
+        document
+            .getElementById(
+                "leadBusiness"
+            )
+            .value
+            .trim();
+
+
+    const requirement =
+        document
+            .getElementById(
+                "leadRequirement"
+            )
+            .value
+            .trim();
+
+
+    if (!name) {
+
+        showMessage(
+            "Lead name is required.",
+            false
+        );
+
+        return;
+    }
+
+
+    if (!phone) {
+
+        showMessage(
+            "Lead phone is required.",
+            false
+        );
+
+        return;
+    }
+
+
+    if (!requirement) {
+
+        showMessage(
+            "Customer requirement is required.",
+            false
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+
+        params.append(
+            "name",
+            name
+        );
+
+
+        params.append(
+            "phone",
+            phone
+        );
+
+
+        params.append(
+            "email",
+            email
+        );
+
+
+        params.append(
+            "business",
+            business
+        );
+
+
+        params.append(
+            "requirement",
+            requirement
+        );
+
+
+        await api(
+            "/leads?" +
+            params.toString(),
+            {
+                method: "POST"
+            }
+        );
+
+
+        showMessage(
+            "Lead captured successfully."
+        );
+
+
+        document
+            .getElementById(
+                "leadName"
+            )
+            .value = "";
+
+
+        document
+            .getElementById(
+                "leadPhone"
+            )
+            .value = "";
+
+
+        document
+            .getElementById(
+                "leadEmail"
+            )
+            .value = "";
+
+
+        document
+            .getElementById(
+                "leadBusiness"
+            )
+            .value = "";
+
+
+        document
+            .getElementById(
+                "leadRequirement"
+            )
+            .value = "";
+
+
+        await loadLeads();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "Failed to capture lead: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+/* =========================
+   LOAD LEADS
+========================= */
+
+async function loadLeads() {
+
+    try {
+
+        const data =
+            await api(
+                "/leads"
+            );
+
+
+        renderLeads(
+            data.leads || []
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Lead loading failed:",
+            error
+        );
+
+
+        document
+            .getElementById(
+                "leadsList"
+            )
+            .innerHTML =
+            `
+            <div class="empty">
+                Unable to load leads.
+            </div>
+            `;
+    }
+}
+
+
+/* =========================
+   RENDER LEADS
+========================= */
+
+function renderLeads(
+    leads
+) {
+
+    const container =
+        document.getElementById(
+            "leadsList"
+        );
+
+
+    if (!leads.length) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No leads yet.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        leads.map(
+            lead => `
+
+            <div class="item">
+
+                <div class="item-title">
+                    ${escapeHtml(lead.name)}
+                </div>
+
+
+                ${
+                    lead.business
+                    ?
+                    `
+                    <div class="muted">
+                        Business:
+                        ${escapeHtml(lead.business)}
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                <div class="muted">
+                    Phone:
+                    ${escapeHtml(lead.phone)}
+                </div>
+
+
+                ${
+                    lead.email
+                    ?
+                    `
+                    <div class="muted">
+                        Email:
+                        ${escapeHtml(lead.email)}
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                <div class="muted">
+                    Requirement:
+                    ${escapeHtml(lead.requirement)}
+                </div>
+
+
+                <span class="status ${escapeHtml(lead.status)}">
+                    ${escapeHtml(lead.status)}
+                </span>
+
+
+                ${
+                    lead.score !== null
+                    ?
+                    `
+                    <div class="lead-score">
+                        AI Score:
+                        ${escapeHtml(lead.score)}/100
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    lead.status === "new"
+                    ?
+                    `
+                    <button
+                        style="margin-top:12px"
+                        onclick="processLead('${escapeHtml(lead.id)}')"
+                    >
+                        Analyze Lead
+                    </button>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    lead.ai_analysis
+                    ?
+                    `
+                    <div class="result">
+                        ${escapeHtml(lead.ai_analysis)}
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+        `
+        ).join("");
+}
+
+
+/* =========================
+   PROCESS LEAD WITH AI
+========================= */
+
+async function processLead(
+    leadId
+) {
+
+    showMessage(
+        "AI is analyzing the lead..."
+    );
+
+
+    try {
+
+        await api(
+            `/leads/${leadId}/process`,
+            {
+                method: "POST"
+            }
+        );
+
+
+        showMessage(
+            "Lead analyzed successfully."
+        );
+
+
+        await loadLeads();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "AI processing failed: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+/* =========================
+   SECURITY
+========================= */
+
+function escapeHtml(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+
+    return String(value)
+
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+}
+
+
+/* =========================
+   START
+========================= */
+
+loadDashboard();
+
+loadLeads();
+
+
+setInterval(
+    loadDashboard,
+    5000
+);
+
+
+setInterval(
+    loadLeads,
+    5000
+);
+
+
+</script>
+
+</body>
+
+</html>

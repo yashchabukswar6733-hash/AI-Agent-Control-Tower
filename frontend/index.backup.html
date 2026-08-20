@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Agent Control Tower</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0b0f19;
+            color: #ffffff;
+        }
+
+        header {
+            padding: 28px 35px;
+            border-bottom: 1px solid #252b3a;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            color: #8f98aa;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .online {
+            color: #62e6a7;
+        }
+
+        .offline {
+            color: #ff7777;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+
+        .card,
+        .panel,
+        .client-card,
+        .agent-card,
+        .task-card {
+            background: #121826;
+            border: 1px solid #252b3a;
+            border-radius: 12px;
+        }
+
+        .card {
+            padding: 20px;
+        }
+
+        .card-title {
+            color: #8f98aa;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .section {
+            margin-top: 35px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .panel {
+            padding: 22px;
+        }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 7px;
+            color: #9da6b8;
+            font-size: 13px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #30384a;
+            background: #0b0f19;
+            color: white;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            background: white;
+            color: black;
+        }
+
+        button:hover {
+            opacity: .85;
+        }
+
+        .danger {
+            background: #ff6666;
+            color: white;
+        }
+
+        .clients,
+        .agents,
+        .tasks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .client-card,
+        .agent-card,
+        .task-card {
+            padding: 20px;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 17px;
+        }
+
+        .muted {
+            color: #8f98aa;
+            margin-top: 7px;
+            font-size: 13px;
+        }
+
+        .active {
+            color: #62e6a7;
+            margin-top: 12px;
+        }
+
+        .status {
+            margin-top: 10px;
+            color: #62e6a7;
+        }
+
+        .result {
+            margin-top: 15px;
+            background: #0b0f19;
+            padding: 12px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow-y: auto;
+            color: #d8deea;
+        }
+
+        .message {
+            min-height: 20px;
+            margin-top: 12px;
+            color: #62e6a7;
+        }
+
+        .error {
+            color: #ff7777;
+        }
+
+        .empty {
+            padding: 20px;
+            border: 1px dashed #30384a;
+            border-radius: 10px;
+            color: #8f98aa;
+        }
+
+        @media(max-width: 1100px) {
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .grid,
+            .clients,
+            .agents,
+            .tasks {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width: 700px) {
+            .stats,
+            .grid,
+            .clients,
+            .agents,
+            .tasks {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>AI Agent Control Tower</h1>
+    <p>Boss Dashboard • AI Operations Center</p>
+</header>
+
+<main class="container">
+
+    <div class="status-bar">
+        <strong id="backendStatus">Checking backend...</strong>
+
+        <button onclick="loadAll()">
+            Refresh Dashboard
+        </button>
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- METRICS -->
+    <!-- ============================= -->
+
+    <div class="stats">
+
+        <div class="card">
+            <div class="card-title">TOTAL AGENTS</div>
+            <div class="number" id="totalAgents">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">ACTIVE AGENTS</div>
+            <div class="number" id="activeAgents">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">TOTAL TASKS</div>
+            <div class="number" id="totalTasks">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">COMPLETED</div>
+            <div class="number" id="completedTasks">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">RUNNING</div>
+            <div class="number" id="runningTasks">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">FAILED</div>
+            <div class="number" id="failedTasks">0</div>
+        </div>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- CREATE -->
+    <!-- ============================= -->
+
+    <div class="section">
+
+        <div class="grid">
+
+            <!-- CLIENT -->
+
+            <div class="panel">
+
+                <h2>🏢 Add Client</h2>
+
+                <label>Client Name</label>
+
+                <input
+                    id="clientName"
+                    placeholder="Rahul"
+                >
+
+                <label>Company</label>
+
+                <input
+                    id="clientCompany"
+                    placeholder="ABC Marketing"
+                >
+
+                <button onclick="createClient()">
+                    Add Client
+                </button>
+
+                <div
+                    id="clientMessage"
+                    class="message"
+                ></div>
+
+            </div>
+
+
+            <!-- AGENT -->
+
+            <div class="panel">
+
+                <h2>🤖 Create Agent</h2>
+
+                <label>Agent Name</label>
+
+                <input
+                    id="agentName"
+                    placeholder="research_agent"
+                >
+
+                <label>Agent Role</label>
+
+                <select id="agentRole">
+
+                    <option value="research">
+                        Research
+                    </option>
+
+                    <option value="coding">
+                        Coding
+                    </option>
+
+                    <option value="planning">
+                        Planning
+                    </option>
+
+                    <option value="general">
+                        General
+                    </option>
+
+                </select>
+
+                <button onclick="createAgent()">
+                    Create Agent
+                </button>
+
+                <div
+                    id="agentMessage"
+                    class="message"
+                ></div>
+
+            </div>
+
+
+            <!-- TASK -->
+
+            <div class="panel">
+
+                <h2>📝 Create Task</h2>
+
+                <label>Client</label>
+
+                <select id="taskClient">
+                    <option value="">
+                        Select client
+                    </option>
+                </select>
+
+                <label>Agent</label>
+
+                <select id="taskAgent">
+                    <option value="">
+                        Select agent
+                    </option>
+                </select>
+
+                <label>Task</label>
+
+                <textarea
+                    id="taskDescription"
+                    placeholder="Research the top AI automation opportunities for this client."
+                ></textarea>
+
+                <button onclick="createTask()">
+                    Create Task
+                </button>
+
+                <div
+                    id="taskMessage"
+                    class="message"
+                ></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- CLIENTS -->
+    <!-- ============================= -->
+
+    <section class="section">
+
+        <div class="section-header">
+            <h2>🏢 Client Workspace</h2>
+        </div>
+
+        <div
+            id="clients"
+            class="clients"
+        >
+            Loading clients...
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- AGENTS -->
+    <!-- ============================= -->
+
+    <section class="section">
+
+        <div class="section-header">
+            <h2>🤖 AI Agents</h2>
+        </div>
+
+        <div
+            id="agents"
+            class="agents"
+        >
+            Loading agents...
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- TASKS -->
+    <!-- ============================= -->
+
+    <section class="section">
+
+        <div class="section-header">
+            <h2>📋 Recent Tasks</h2>
+        </div>
+
+        <div
+            id="tasks"
+            class="tasks"
+        >
+            Loading tasks...
+        </div>
+
+    </section>
+
+</main>
+
+
+<script>
+
+const API = "http://127.0.0.1:8000";
+
+
+/* ======================================
+   LOAD EVERYTHING
+====================================== */
+
+async function loadAll() {
+
+    try {
+
+        await Promise.all([
+            loadDashboard(),
+            loadClients(),
+            loadAgents(),
+            loadTasks()
+        ]);
+
+        setBackendStatus(true);
+
+    } catch (error) {
+
+        console.error(error);
+
+        setBackendStatus(false);
+    }
+}
+
+
+/* ======================================
+   BACKEND STATUS
+====================================== */
+
+function setBackendStatus(online) {
+
+    const element =
+        document.getElementById(
+            "backendStatus"
+        );
+
+    if (online) {
+
+        element.textContent =
+            "● Backend Online";
+
+        element.className =
+            "online";
+
+    } else {
+
+        element.textContent =
+            "● Backend Offline";
+
+        element.className =
+            "offline";
+    }
+}
+
+
+/* ======================================
+   DASHBOARD
+====================================== */
+
+async function loadDashboard() {
+
+    const response =
+        await fetch(
+            `${API}/dashboard`
+        );
+
+    if (!response.ok) {
+        throw new Error("Dashboard error");
+    }
+
+    const data =
+        await response.json();
+
+    const overview =
+        data.overview || {};
+
+    document.getElementById(
+        "totalAgents"
+    ).textContent =
+        overview.total_agents ?? 0;
+
+    document.getElementById(
+        "activeAgents"
+    ).textContent =
+        overview.active_agents ?? 0;
+
+    document.getElementById(
+        "totalTasks"
+    ).textContent =
+        overview.total_tasks ?? 0;
+
+    document.getElementById(
+        "completedTasks"
+    ).textContent =
+        overview.completed_tasks ?? 0;
+
+    document.getElementById(
+        "runningTasks"
+    ).textContent =
+        overview.running_tasks ?? 0;
+
+    document.getElementById(
+        "failedTasks"
+    ).textContent =
+        overview.failed_tasks ?? 0;
+}
+
+
+/* ======================================
+   CLIENTS
+====================================== */
+
+async function loadClients() {
+
+    const response =
+        await fetch(
+            `${API}/clients`
+        );
+
+    const data =
+        await response.json();
+
+    const clients =
+        data.clients || [];
+
+    const container =
+        document.getElementById(
+            "clients"
+        );
+
+    const select =
+        document.getElementById(
+            "taskClient"
+        );
+
+    select.innerHTML =
+        `<option value="">Select client</option>`;
+
+
+    if (!clients.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No clients yet.
+            </div>`;
+
+        return;
+    }
+
+
+    clients.forEach(client => {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            client.id;
+
+        option.textContent =
+            `${client.company}`;
+
+        select.appendChild(option);
+    });
+
+
+    container.innerHTML =
+        clients.map(client => `
+
+            <div class="client-card">
+
+                <div class="title">
+                    🏢 ${escapeHtml(client.company)}
+                </div>
+
+                <div class="muted">
+                    Client: ${escapeHtml(client.name)}
+                </div>
+
+                <div class="active">
+                    ● ${escapeHtml(client.status)}
+                </div>
+
+                <div class="muted">
+                    Created:
+                    ${formatDate(client.created_at)}
+                </div>
+
+            </div>
+
+        `).join("");
+}
+
+
+/* ======================================
+   AGENTS
+====================================== */
+
+async function loadAgents() {
+
+    const response =
+        await fetch(
+            `${API}/agents`
+        );
+
+    const data =
+        await response.json();
+
+    const agents =
+        data.agents || [];
+
+    const container =
+        document.getElementById(
+            "agents"
+        );
+
+    const select =
+        document.getElementById(
+            "taskAgent"
+        );
+
+    select.innerHTML =
+        `<option value="">Select agent</option>`;
+
+
+    if (!agents.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No agents registered.
+            </div>`;
+
+        return;
+    }
+
+
+    agents.forEach(agent => {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            agent.name;
+
+        option.textContent =
+            `${agent.name} (${agent.role})`;
+
+        select.appendChild(option);
+
+    });
+
+
+    container.innerHTML =
+        agents.map(agent => `
+
+            <div class="agent-card">
+
+                <div class="title">
+                    🤖 ${escapeHtml(agent.name)}
+                </div>
+
+                <div class="muted">
+                    Role: ${escapeHtml(agent.role)}
+                </div>
+
+                <div class="status">
+                    ● ${escapeHtml(agent.status)}
+                </div>
+
+            </div>
+
+        `).join("");
+}
+
+
+/* ======================================
+   TASKS
+====================================== */
+
+async function loadTasks() {
+
+    const response =
+        await fetch(
+            `${API}/tasks`
+        );
+
+    const data =
+        await response.json();
+
+    const tasks =
+        data.tasks || [];
+
+    const container =
+        document.getElementById(
+            "tasks"
+        );
+
+
+    if (!tasks.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No tasks yet.
+            </div>`;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        [...tasks]
+        .reverse()
+        .map(task => `
+
+            <div class="task-card">
+
+                <div class="title">
+                    ${escapeHtml(task.description)}
+                </div>
+
+                <div class="muted">
+                    Agent:
+                    ${escapeHtml(task.agent)}
+                </div>
+
+                <div class="status">
+                    ● ${escapeHtml(task.status)}
+                </div>
+
+                ${
+                    task.result
+                    ?
+                    `<div class="result">
+                        ${escapeHtml(task.result)}
+                    </div>`
+                    :
+                    ""
+                }
+
+                ${
+                    task.status === "pending"
+                    ?
+                    `<button
+                        onclick="executeTask('${task.id}')"
+                    >
+                        ▶ Execute
+                    </button>`
+                    :
+                    ""
+                }
+
+            </div>
+
+        `).join("");
+}
+
+
+/* ======================================
+   CREATE CLIENT
+====================================== */
+
+async function createClient() {
+
+    const name =
+        document.getElementById(
+            "clientName"
+        ).value.trim();
+
+    const company =
+        document.getElementById(
+            "clientCompany"
+        ).value.trim();
+
+
+    if (!name || !company) {
+
+        showMessage(
+            "clientMessage",
+            "Enter client name and company.",
+            true
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const url =
+            `${API}/clients?name=${encodeURIComponent(name)}&company=${encodeURIComponent(company)}`;
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+
+        if (data.error) {
+
+            showMessage(
+                "clientMessage",
+                data.error,
+                true
+            );
+
+            return;
+        }
+
+
+        showMessage(
+            "clientMessage",
+            "Client created successfully."
+        );
+
+
+        document.getElementById(
+            "clientName"
+        ).value = "";
+
+        document.getElementById(
+            "clientCompany"
+        ).value = "";
+
+
+        await loadClients();
+
+    } catch (error) {
+
+        showMessage(
+            "clientMessage",
+            "Could not connect to backend.",
+            true
+        );
+    }
+}
+
+
+/* ======================================
+   CREATE AGENT
+====================================== */
+
+async function createAgent() {
+
+    const name =
+        document.getElementById(
+            "agentName"
+        ).value.trim();
+
+    const role =
+        document.getElementById(
+            "agentRole"
+        ).value;
+
+
+    if (!name) {
+
+        showMessage(
+            "agentMessage",
+            "Enter an agent name.",
+            true
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const url =
+            `${API}/agents/${encodeURIComponent(name)}?role=${encodeURIComponent(role)}`;
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+
+        if (data.error) {
+
+            showMessage(
+                "agentMessage",
+                data.error,
+                true
+            );
+
+            return;
+        }
+
+
+        showMessage(
+            "agentMessage",
+            "Agent created successfully."
+        );
+
+
+        document.getElementById(
+            "agentName"
+        ).value = "";
+
+
+        await loadAgents();
+        await loadDashboard();
+
+    } catch (error) {
+
+        showMessage(
+            "agentMessage",
+            "Could not connect to backend.",
+            true
+        );
+    }
+}
+
+
+/* ======================================
+   CREATE TASK
+====================================== */
+
+async function createTask() {
+
+    const client =
+        document.getElementById(
+            "taskClient"
+        ).value;
+
+    const agent =
+        document.getElementById(
+            "taskAgent"
+        ).value;
+
+    const description =
+        document.getElementById(
+            "taskDescription"
+        ).value.trim();
+
+
+    if (!client || !agent || !description) {
+
+        showMessage(
+            "taskMessage",
+            "Select client, agent and enter a task.",
+            true
+        );
+
+        return;
+    }
+
+
+    try {
+
+        /*
+         * Current backend stores the task against
+         * the agent. Client association will be
+         * added to the task model in the next step.
+         */
+
+        const url =
+            `${API}/tasks?agent_name=${encodeURIComponent(agent)}&task_description=${encodeURIComponent(description)}`;
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+
+        if (data.error) {
+
+            showMessage(
+                "taskMessage",
+                data.error,
+                true
+            );
+
+            return;
+        }
+
+
+        showMessage(
+            "taskMessage",
+            `Task created for ${client}.`
+        );
+
+
+        document.getElementById(
+            "taskDescription"
+        ).value = "";
+
+
+        await loadTasks();
+        await loadDashboard();
+
+    } catch (error) {
+
+        showMessage(
+            "taskMessage",
+            "Could not connect to backend.",
+            true
+        );
+    }
+}
+
+
+/* ======================================
+   EXECUTE TASK
+====================================== */
+
+async function executeTask(taskId) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/tasks/${encodeURIComponent(taskId)}/execute`,
+                {
+                    method: "POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+
+        if (data.error) {
+
+            alert(data.error);
+
+            return;
+        }
+
+
+        await loadAll();
+
+    } catch (error) {
+
+        alert(
+            "Could not execute task."
+        );
+    }
+}
+
+
+/* ======================================
+   MESSAGE
+====================================== */
+
+function showMessage(
+    id,
+    message,
+    error = false
+) {
+
+    const element =
+        document.getElementById(id);
+
+    element.textContent =
+        message;
+
+    element.className =
+        error
+        ? "message error"
+        : "message";
+
+
+    setTimeout(
+        () => {
+            element.textContent = "";
+        },
+        4000
+    );
+}
+
+
+/* ======================================
+   HELPERS
+====================================== */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "-";
+    }
+
+    return new Date(value)
+        .toLocaleString();
+}
+
+
+/* ======================================
+   START
+====================================== */
+
+loadAll();
+
+setInterval(
+    loadAll,
+    10000
+);
+
+</script>
+
+</body>
+</html>

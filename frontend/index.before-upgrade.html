@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Control Tower</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b1020;
+            color: #f5f7ff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 30px;
+        }
+
+        .subtitle {
+            color: #8f9bb7;
+            margin-top: 6px;
+        }
+
+        .online {
+            background: #123d2a;
+            color: #55e69b;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            background: #121a2d;
+            border: 1px solid #25304a;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-title {
+            color: #8f9bb7;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #121a2d;
+            border: 1px solid #25304a;
+            border-radius: 16px;
+            padding: 22px;
+        }
+
+        .card h2 {
+            margin-bottom: 18px;
+            font-size: 20px;
+        }
+
+        .item {
+            background: #0d1425;
+            border: 1px solid #222d45;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .item-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: #8f9bb7;
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 9px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #263149;
+        }
+
+        .completed {
+            color: #55e69b;
+            background: #123d2a;
+        }
+
+        .running {
+            color: #ffd166;
+            background: #493c12;
+        }
+
+        .pending {
+            color: #9db4ff;
+        }
+
+        .failed {
+            color: #ff7777;
+            background: #461c24;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #536dfe;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .secondary {
+            background: #263149;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            background: #0b1020;
+            border: 1px solid #303b57;
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #aeb9d0;
+            font-size: 13px;
+        }
+
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        .workflow-step {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #222d45;
+        }
+
+        .result {
+            margin-top: 12px;
+            background: #080d19;
+            padding: 12px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow: auto;
+            font-size: 12px;
+            color: #cbd5ef;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .empty {
+            color: #7f8ba5;
+            font-size: 14px;
+        }
+
+        #message {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div>
+            <h1>AI Agent Control Tower</h1>
+            <div class="subtitle">Boss Dashboard • AI Operations Center</div>
+        </div>
+
+        <div id="connection" class="online">
+            ● Checking Backend...
+        </div>
+    </header>
+
+    <div id="message"></div>
+
+    <!-- STATS -->
+    <section class="stats">
+
+        <div class="stat">
+            <div class="stat-title">TOTAL CLIENTS</div>
+            <div id="totalClients" class="stat-value">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">TOTAL AGENTS</div>
+            <div id="totalAgents" class="stat-value">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">ACTIVE AGENTS</div>
+            <div id="activeAgents" class="stat-value">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">TOTAL TASKS</div>
+            <div id="totalTasks" class="stat-value">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">COMPLETED</div>
+            <div id="completedTasks" class="stat-value">0</div>
+        </div>
+
+    </section>
+
+    <section class="grid">
+
+        <!-- CREATE WORKFLOW -->
+        <div class="card">
+            <h2>Create Workflow</h2>
+
+            <div class="form-row">
+                <label>Client</label>
+                <select id="clientSelect">
+                    <option value="">Loading clients...</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label>Business Goal</label>
+                <textarea
+                    id="workflowGoal"
+                    placeholder="Example: Create a market research report for AI automation services."
+                ></textarea>
+            </div>
+
+            <button onclick="createWorkflow()">
+                Create Workflow
+            </button>
+        </div>
+
+        <!-- CLIENTS -->
+        <div class="card">
+            <h2>Clients</h2>
+            <div id="clientsList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+
+        <!-- AGENTS -->
+        <div class="card">
+            <h2>Agents</h2>
+            <div id="agentsList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+
+        <!-- TASKS -->
+        <div class="card">
+            <h2>Tasks</h2>
+            <div id="tasksList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+
+        <!-- WORKFLOWS -->
+        <div class="card full">
+            <h2>Workflows</h2>
+            <div id="workflowsList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+
+const API = "http://127.0.0.1:8000";
+
+
+function showMessage(text, success = true) {
+
+    const box = document.getElementById("message");
+
+    box.style.display = "block";
+    box.textContent = text;
+
+    box.style.background = success
+        ? "#123d2a"
+        : "#461c24";
+
+    box.style.color = success
+        ? "#55e69b"
+        : "#ff7777";
+
+    setTimeout(() => {
+        box.style.display = "none";
+    }, 4000);
+}
+
+
+async function api(url, options = {}) {
+
+    const response = await fetch(API + url, options);
+
+    if (!response.ok) {
+
+        let errorText = await response.text();
+
+        throw new Error(
+            `HTTP ${response.status}: ${errorText}`
+        );
+    }
+
+    return await response.json();
+}
+
+
+async function loadDashboard() {
+
+    try {
+
+        const data = await api("/dashboard");
+
+        document.getElementById("connection").textContent =
+            "● Backend Online";
+
+        document.getElementById("totalClients").textContent =
+            data.total_clients;
+
+        document.getElementById("totalAgents").textContent =
+            data.total_agents;
+
+        document.getElementById("activeAgents").textContent =
+            data.active_agents;
+
+        document.getElementById("totalTasks").textContent =
+            data.total_tasks;
+
+        document.getElementById("completedTasks").textContent =
+            data.completed_tasks;
+
+        renderClients(data.clients || []);
+        renderAgents(data.agents || []);
+        renderTasks(data.tasks || []);
+        renderWorkflows(data.workflows || []);
+
+        loadClientSelect(data.clients || []);
+
+    } catch (error) {
+
+        document.getElementById("connection").textContent =
+            "● Backend Offline";
+
+        console.error(error);
+    }
+}
+
+
+function loadClientSelect(clients) {
+
+    const select = document.getElementById("clientSelect");
+
+    select.innerHTML = "";
+
+    if (!clients.length) {
+
+        select.innerHTML =
+            `<option value="">No clients available</option>`;
+
+        return;
+    }
+
+    clients.forEach(client => {
+
+        const option = document.createElement("option");
+
+        option.value = client.id;
+
+        option.textContent =
+            `${client.name} — ${client.company}`;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+function renderClients(clients) {
+
+    const container = document.getElementById("clientsList");
+
+    if (!clients.length) {
+
+        container.innerHTML =
+            `<div class="empty">No clients yet.</div>`;
+
+        return;
+    }
+
+    container.innerHTML = clients.map(client => `
+
+        <div class="item">
+
+            <div class="item-title">
+                ${escapeHtml(client.name)}
+            </div>
+
+            <div class="muted">
+                ${escapeHtml(client.company)}
+            </div>
+
+            <span class="status ${client.status}">
+                ${client.status}
+            </span>
+
+        </div>
+
+    `).join("");
+}
+
+
+function renderAgents(agents) {
+
+    const container = document.getElementById("agentsList");
+
+    if (!agents.length) {
+
+        container.innerHTML =
+            `<div class="empty">No agents yet.</div>`;
+
+        return;
+    }
+
+    container.innerHTML = agents.map(agent => `
+
+        <div class="item">
+
+            <div class="item-title">
+                ${escapeHtml(agent.name)}
+            </div>
+
+            <div class="muted">
+                Role: ${escapeHtml(agent.role)}
+            </div>
+
+            <span class="status ${agent.status}">
+                ${agent.status}
+            </span>
+
+        </div>
+
+    `).join("");
+}
+
+
+function renderTasks(tasks) {
+
+    const container = document.getElementById("tasksList");
+
+    if (!tasks.length) {
+
+        container.innerHTML =
+            `<div class="empty">No tasks yet.</div>`;
+
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => `
+
+        <div class="item">
+
+            <div class="item-title">
+                ${escapeHtml(task.description)}
+            </div>
+
+            <div class="muted">
+                Agent: ${escapeHtml(task.agent)}
+            </div>
+
+            <span class="status ${task.status}">
+                ${task.status}
+            </span>
+
+            ${
+                task.result
+                ?
+                `<div class="result">${escapeHtml(task.result)}</div>`
+                :
+                ""
+            }
+
+        </div>
+
+    `).join("");
+}
+
+
+function renderWorkflows(workflows) {
+
+    const container =
+        document.getElementById("workflowsList");
+
+    if (!workflows.length) {
+
+        container.innerHTML =
+            `<div class="empty">No workflows yet.</div>`;
+
+        return;
+    }
+
+    container.innerHTML = workflows.map(workflow => `
+
+        <div class="item">
+
+            <div class="item-title">
+                ${escapeHtml(workflow.goal)}
+            </div>
+
+            <div class="muted">
+                Workflow ID: ${escapeHtml(workflow.id)}
+            </div>
+
+            <div class="muted">
+                Client: ${escapeHtml(workflow.client_id)}
+            </div>
+
+            <span class="status ${workflow.status}">
+                ${workflow.status}
+            </span>
+
+            <div style="margin-top:15px">
+
+                ${(workflow.steps || []).map(step => `
+
+                    <div class="workflow-step">
+
+                        <span>
+                            ${escapeHtml(step.name)}
+                        </span>
+
+                        <span class="status ${step.status}">
+                            ${step.status}
+                        </span>
+
+                    </div>
+
+                `).join("")}
+
+            </div>
+
+            ${
+                workflow.status === "pending"
+                ?
+                `
+                <button
+                    style="margin-top:15px"
+                    onclick="executeWorkflow('${workflow.id}')"
+                >
+                    Execute Workflow
+                </button>
+                `
+                :
+                ""
+            }
+
+            ${
+                workflow.result
+                ?
+                `<div class="result">${escapeHtml(workflow.result)}</div>`
+                :
+                ""
+            }
+
+        </div>
+
+    `).join("");
+}
+
+
+async function createWorkflow() {
+
+    const clientId =
+        document.getElementById("clientSelect").value;
+
+    const goal =
+        document.getElementById("workflowGoal").value.trim();
+
+    if (!clientId) {
+
+        showMessage(
+            "Please select a client.",
+            false
+        );
+
+        return;
+    }
+
+    if (!goal) {
+
+        showMessage(
+            "Please enter a business goal.",
+            false
+        );
+
+        return;
+    }
+
+    try {
+
+        const params = new URLSearchParams();
+
+        params.append("client_id", clientId);
+        params.append("goal", goal);
+
+        await api(
+            "/workflows?" + params.toString(),
+            {
+                method: "POST"
+            }
+        );
+
+        showMessage(
+            "Workflow created successfully."
+        );
+
+        document.getElementById("workflowGoal").value = "";
+
+        await loadDashboard();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Failed to create workflow: " + error.message,
+            false
+        );
+    }
+}
+
+
+async function executeWorkflow(workflowId) {
+
+    try {
+
+        showMessage(
+            "Workflow execution started..."
+        );
+
+        await api(
+            `/workflows/${workflowId}/execute`,
+            {
+                method: "POST"
+            }
+        );
+
+        showMessage(
+            "Workflow executed successfully."
+        );
+
+        await loadDashboard();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Workflow execution failed: " +
+            error.message,
+            false
+        );
+    }
+}
+
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+loadDashboard();
+
+setInterval(
+    loadDashboard,
+    5000
+);
+
+</script>
+
+</body>
+</html>
