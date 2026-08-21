@@ -4,413 +4,325 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AI Agent Control Tower</title>
+<title>AutoPilot AI | AI Automation for Modern Businesses</title>
 
 <style>
 *{
-    box-sizing:border-box;
     margin:0;
     padding:0;
-}
-
-:root{
-    --bg:#070b14;
-    --panel:#0d1422;
-    --panel2:#111a2b;
-    --border:#202d45;
-    --text:#f5f7ff;
-    --muted:#8b98b3;
-    --blue:#5b6cff;
-    --green:#39d98a;
-    --yellow:#ffd166;
-    --red:#ff647c;
+    box-sizing:border-box;
 }
 
 body{
-    font-family:Inter,Arial,sans-serif;
-    background:
-        radial-gradient(circle at top right,#18244b 0,transparent 35%),
-        var(--bg);
-    color:var(--text);
-    min-height:100vh;
-}
-
-button{
-    border:0;
-    cursor:pointer;
-    color:white;
-    font-weight:700;
-    border-radius:9px;
-    padding:10px 15px;
-    background:var(--blue);
-}
-
-button:hover{
-    opacity:.88;
-    transform:translateY(-1px);
-}
-
-input,textarea,select{
-    width:100%;
-    background:#080d18;
-    border:1px solid #293650;
-    color:white;
-    border-radius:9px;
-    padding:12px;
-    outline:none;
-}
-
-textarea{
-    min-height:100px;
-    resize:vertical;
-}
-
-input:focus,
-textarea:focus,
-select:focus{
-    border-color:var(--blue);
-}
-
-label{
-    display:block;
-    color:#aeb9d0;
-    font-size:13px;
-    margin-bottom:7px;
-}
-
-.form-group{
-    margin-bottom:15px;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f7f9fc;
+    color:#111827;
+    line-height:1.6;
 }
 
 .container{
-    width:min(1500px,94%);
+    width:min(1100px,92%);
     margin:auto;
-    padding:28px 0 50px;
 }
 
 header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:20px;
-    margin-bottom:28px;
-}
-
-.brand{
-    display:flex;
-    align-items:center;
-    gap:14px;
-}
-
-.logo{
-    width:48px;
-    height:48px;
-    display:grid;
-    place-items:center;
-    border-radius:13px;
-    background:linear-gradient(135deg,#6675ff,#8a4dff);
-    font-size:24px;
-    box-shadow:0 10px 30px #5263ff25;
-}
-
-h1{
-    font-size:27px;
-}
-
-.subtitle{
-    color:var(--muted);
-    margin-top:5px;
-    font-size:14px;
-}
-
-.connection{
-    padding:9px 14px;
-    border-radius:30px;
-    font-size:13px;
-    font-weight:700;
-}
-
-.online{
-    color:var(--green);
-    background:#103b29;
-}
-
-.offline{
-    color:var(--red);
-    background:#421c27;
-}
-
-#message{
-    display:none;
-    padding:13px 16px;
-    margin-bottom:20px;
-    border-radius:10px;
-    font-weight:600;
-}
-
-.stats{
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:14px;
-    margin-bottom:22px;
-}
-
-.stat{
-    background:linear-gradient(145deg,#111a2b,#0c1320);
-    border:1px solid var(--border);
-    border-radius:15px;
-    padding:19px;
-}
-
-.stat-title{
-    color:var(--muted);
-    font-size:11px;
-    letter-spacing:1px;
-    margin-bottom:9px;
-}
-
-.stat-value{
-    font-size:27px;
-    font-weight:800;
+    padding:25px 0;
+    background:white;
+    border-bottom:1px solid #e5e7eb;
 }
 
 .nav{
     display:flex;
-    gap:8px;
-    overflow:auto;
-    margin-bottom:22px;
-    padding-bottom:4px;
-}
-
-.nav button{
-    background:#111a2b;
-    border:1px solid var(--border);
-    color:#aeb9d0;
-    white-space:nowrap;
-}
-
-.nav button.active{
-    background:var(--blue);
-    color:white;
-}
-
-.section{
-    display:none;
-}
-
-.section.active{
-    display:block;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:18px;
-}
-
-.card{
-    background:linear-gradient(145deg,#101929,#0c1320);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:21px;
-    box-shadow:0 12px 35px #00000020;
-}
-
-.full{
-    grid-column:1/-1;
-}
-
-.card-header{
-    display:flex;
     justify-content:space-between;
-    align-items:flex-start;
-    gap:15px;
-    margin-bottom:18px;
+    align-items:center;
 }
 
-h2{
-    font-size:18px;
-}
-
-.description{
-    color:var(--muted);
-    font-size:13px;
-    margin-top:5px;
-}
-
-.item{
-    background:#080e1a;
-    border:1px solid #1e2a40;
-    border-radius:11px;
-    padding:14px;
-    margin-bottom:10px;
-}
-
-.item-title{
-    font-weight:700;
-    margin-bottom:5px;
-}
-
-.muted{
-    color:var(--muted);
-    font-size:13px;
-    margin-top:4px;
-}
-
-.status{
-    display:inline-block;
-    margin-top:9px;
-    padding:5px 9px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:700;
-    background:#273149;
-}
-
-.status.active,
-.status.completed,
-.status.qualified,
-.status.won,
-.status.paid{
-    color:var(--green);
-    background:#103b29;
-}
-
-.status.running,
-.status.proposal,
-.status.pending{
-    color:var(--yellow);
-    background:#463a11;
-}
-
-.status.new{
-    color:#9fb2ff;
-    background:#202c50;
-}
-
-.status.failed,
-.status.rejected,
-.status.cancelled{
-    color:var(--red);
-    background:#431d27;
-}
-
-.result{
-    margin-top:12px;
-    background:#050a12;
-    border:1px solid #182337;
-    border-radius:9px;
-    padding:12px;
-    color:#cbd5ef;
-    white-space:pre-wrap;
-    font-size:12px;
-    max-height:250px;
-    overflow:auto;
-}
-
-.money{
-    font-weight:800;
-    margin-top:8px;
-}
-
-.empty{
-    color:#73819d;
-    padding:20px 5px;
-    text-align:center;
-}
-
-.actions{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin-top:12px;
-}
-
-.btn-secondary{
-    background:#263149;
-}
-
-.btn-danger{
-    background:#8e3042;
-}
-
-.pipeline{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    margin-bottom:20px;
-}
-
-.pipeline-box{
-    background:#080e1a;
-    border:1px solid var(--border);
-    border-radius:11px;
-    padding:15px;
-}
-
-.pipeline-title{
-    color:var(--muted);
-    font-size:11px;
-    margin-bottom:7px;
-}
-
-.pipeline-count{
+.logo{
     font-size:24px;
     font-weight:800;
 }
 
-footer{
+.hero{
     text-align:center;
-    color:#56627a;
-    font-size:12px;
-    margin-top:35px;
+    padding:90px 20px 70px;
+    background:linear-gradient(135deg,#eef4ff,#ffffff);
 }
 
-@media(max-width:1100px){
-    .stats{
-        grid-template-columns:repeat(3,1fr);
-    }
+.hero h1{
+    font-size:clamp(38px,6vw,64px);
+    line-height:1.1;
+    margin-bottom:20px;
+}
+
+.hero h1 span{
+    color:#2563eb;
+}
+
+.hero p{
+    max-width:750px;
+    margin:0 auto 30px;
+    font-size:18px;
+    color:#4b5563;
+}
+
+.buttons{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    display:inline-block;
+    padding:14px 22px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:700;
+}
+
+.btn-primary{
+    background:#2563eb;
+    color:white;
+}
+
+.btn-secondary{
+    background:white;
+    color:#111827;
+    border:1px solid #d1d5db;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    padding:35px 0;
+}
+
+.stat{
+    text-align:center;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    border:1px solid #e5e7eb;
+}
+
+.stat strong{
+    display:block;
+    font-size:30px;
+    color:#2563eb;
+}
+
+section{
+    padding:70px 0;
+}
+
+.section-title{
+    text-align:center;
+    margin-bottom:40px;
+}
+
+.section-title h2{
+    font-size:36px;
+    margin-bottom:10px;
+}
+
+.section-title p{
+    color:#6b7280;
+}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
+
+.service{
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    border:1px solid #e5e7eb;
+    transition:.2s;
+}
+
+.service:hover{
+    transform:translateY(-4px);
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+}
+
+.icon{
+    width:50px;
+    height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#eff6ff;
+    color:#2563eb;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:bold;
+    margin-bottom:18px;
+}
+
+.service h3{
+    margin-bottom:10px;
+}
+
+.service p{
+    color:#6b7280;
+}
+
+.steps{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:25px;
+}
+
+.step{
+    text-align:center;
+    padding:25px;
+}
+
+.number{
+    width:50px;
+    height:50px;
+    margin:0 auto 15px;
+    border-radius:50%;
+    background:#2563eb;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:20px;
+}
+
+.pricing{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:25px;
+    max-width:850px;
+    margin:auto;
+}
+
+.price-card{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:18px;
+    padding:35px;
+}
+
+.price{
+    font-size:35px;
+    font-weight:800;
+    margin:15px 0;
+}
+
+.price-card ul{
+    list-style:none;
+    margin:20px 0;
+}
+
+.price-card li{
+    margin:10px 0;
+}
+
+.audit{
+    background:#111827;
+    color:white;
+    border-radius:25px;
+    padding:50px;
+    max-width:800px;
+    margin:auto;
+}
+
+.audit h2{
+    font-size:36px;
+    margin-bottom:10px;
+}
+
+.audit p{
+    color:#d1d5db;
+    margin-bottom:25px;
+}
+
+form{
+    display:grid;
+    gap:15px;
+}
+
+input,
+textarea{
+    width:100%;
+    padding:15px;
+    border-radius:9px;
+    border:1px solid #d1d5db;
+    font-size:16px;
+    font-family:inherit;
+}
+
+textarea{
+    min-height:120px;
+    resize:vertical;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+    padding:15px;
+    border-radius:9px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:700;
+}
+
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+#message{
+    margin-top:15px;
+    font-weight:600;
+}
+
+.success{
+    color:#4ade80;
+}
+
+.error{
+    color:#f87171;
+}
+
+footer{
+    text-align:center;
+    padding:30px;
+    color:#6b7280;
 }
 
 @media(max-width:800px){
-    .grid{
+
+    .stats,
+    .services,
+    .steps,
+    .pricing{
         grid-template-columns:1fr;
     }
 
-    .full{
-        grid-column:auto;
+    .hero{
+        padding-top:60px;
     }
 
-    .stats{
-        grid-template-columns:repeat(2,1fr);
+    .audit{
+        padding:30px 20px;
     }
 
-    header{
-        align-items:flex-start;
-        flex-direction:column;
+    .nav{
+        gap:15px;
     }
 
-    .pipeline{
-        grid-template-columns:repeat(2,1fr);
-    }
-}
-
-@media(max-width:500px){
-    .container{
-        width:94%;
-        padding-top:18px;
-    }
-
-    .stats{
-        grid-template-columns:1fr;
-    }
-
-    .pipeline{
-        grid-template-columns:1fr;
-    }
-
-    h1{
-        font-size:22px;
+    .logo{
+        font-size:20px;
     }
 }
 </style>
@@ -418,1276 +330,580 @@ footer{
 
 <body>
 
-<div class="container">
-
 <header>
 
-<div class="brand">
-<div class="logo">⚡</div>
+<div class="container nav">
 
-<div>
-<h1>AI Agent Control Tower</h1>
-<div class="subtitle">
-Autonomous AI Operations Platform
-</div>
-</div>
+<div class="logo">
+AutoPilot AI
 </div>
 
-<div id="connection" class="connection offline">
-● Connecting...
+<a href="#audit" class="btn btn-primary">
+Get Free Audit
+</a>
+
 </div>
 
 </header>
 
+
+<!-- HERO -->
+
+<section class="hero">
+
+<div class="container">
+
+<h1>
+Turn Your Business Into An
+<span>AI-Powered Business.</span>
+</h1>
+
+<p>
+We automate repetitive work, capture more leads and help businesses
+operate faster using intelligent AI agents that work around the clock.
+</p>
+
+<div class="buttons">
+
+<a href="#audit" class="btn btn-primary">
+Get Your Free AI Audit
+</a>
+
+<a href="#services" class="btn btn-secondary">
+See What We Automate
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- STATS -->
+
+<div class="container">
+
+<div class="stats">
+
+<div class="stat">
+<strong>24/7</strong>
+AI availability
+</div>
+
+<div class="stat">
+<strong>5+</strong>
+Business automation solutions
+</div>
+
+<div class="stat">
+<strong>∞</strong>
+Scalable workflows
+</div>
+
+</div>
+
+</div>
+
+
+<!-- SERVICES -->
+
+<section id="services">
+
+<div class="container">
+
+<div class="section-title">
+
+<h2>
+What Can We Automate?
+</h2>
+
+<p>
+Stop spending your team's time on repetitive work.
+</p>
+
+</div>
+
+
+<div class="services">
+
+
+<div class="service">
+
+<div class="icon">
+AI
+</div>
+
+<h3>
+AI Sales Agents
+</h3>
+
+<p>
+Automatically qualify leads, answer questions and help
+move prospects toward a sale.
+</p>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">
+WA
+</div>
+
+<h3>
+WhatsApp Automation
+</h3>
+
+<p>
+Automate customer conversations, lead capture,
+follow-ups and appointment requests.
+</p>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">
+LF
+</div>
+
+<h3>
+Lead Follow-Up
+</h3>
+
+<p>
+Stop losing leads because nobody followed up.
+Your AI can handle the first response.
+</p>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">
+VO
+</div>
+
+<h3>
+AI Voice Agents
+</h3>
+
+<p>
+AI-powered voice workflows can handle routine calls
+and customer qualification.
+</p>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">
+DOC
+</div>
+
+<h3>
+Document Automation
+</h3>
+
+<p>
+Extract information from invoices, forms and documents
+without repetitive data entry.
+</p>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">
+BI
+</div>
+
+<h3>
+Business AI Assistant
+</h3>
+
+<p>
+Give your team an AI assistant that can work with
+your business knowledge and processes.
+</p>
+
+</div>
+
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- HOW IT WORKS -->
+
+<section>
+
+<div class="container">
+
+<div class="section-title">
+
+<h2>
+How It Works
+</h2>
+
+<p>
+Simple for you. Powerful behind the scenes.
+</p>
+
+</div>
+
+
+<div class="steps">
+
+
+<div class="step">
+
+<div class="number">
+1
+</div>
+
+<h3>
+Tell Us Your Problem
+</h3>
+
+<p>
+Tell us what repetitive work is wasting your team's time.
+</p>
+
+</div>
+
+
+<div class="step">
+
+<div class="number">
+2
+</div>
+
+<h3>
+We Design The Automation
+</h3>
+
+<p>
+We identify the workflow and design an AI-powered
+solution around your business.
+</p>
+
+</div>
+
+
+<div class="step">
+
+<div class="number">
+3
+</div>
+
+<h3>
+AI Goes To Work
+</h3>
+
+<p>
+Your automation handles the workflow while you
+focus on growing your business.
+</p>
+
+</div>
+
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- PRICING -->
+
+<section>
+
+<div class="container">
+
+<div class="section-title">
+
+<h2>
+Simple Packages
+</h2>
+
+<p>
+Start small. Scale when the automation proves its value.
+</p>
+
+</div>
+
+
+<div class="pricing">
+
+
+<div class="price-card">
+
+<h3>
+Starter
+</h3>
+
+<div class="price">
+₹4,999
+</div>
+
+<p>
+One-time setup
+</p>
+
+<ul>
+
+<li>✓ 1 automation workflow</li>
+<li>✓ AI lead handling</li>
+<li>✓ Basic integration</li>
+<li>✓ Initial setup</li>
+
+</ul>
+
+<a href="#audit" class="btn btn-primary">
+Request Audit
+</a>
+
+</div>
+
+
+<div class="price-card">
+
+<h3>
+Growth
+</h3>
+
+<div class="price">
+₹14,999
+</div>
+
+<p>
+One-time setup
+</p>
+
+<ul>
+
+<li>✓ Multiple AI workflows</li>
+<li>✓ Lead automation</li>
+<li>✓ WhatsApp integration</li>
+<li>✓ Ongoing optimization</li>
+
+</ul>
+
+<a href="#audit" class="btn btn-primary">
+Talk About Your Business
+</a>
+
+</div>
+
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- AUDIT FORM -->
+
+<section id="audit">
+
+<div class="container">
+
+<div class="audit">
+
+<h2>
+Get Your Free AI Automation Audit
+</h2>
+
+<p>
+Tell us about your business. We'll identify where AI
+automation could save time or capture more opportunities.
+</p>
+
+
+<form id="leadForm">
+
+<input
+type="text"
+id="name"
+placeholder="Your Name"
+required
+>
+
+<input
+type="tel"
+id="phone"
+placeholder="Phone Number"
+required
+>
+
+<input
+type="email"
+id="email"
+placeholder="Email"
+>
+
+<input
+type="text"
+id="business"
+placeholder="Business Name"
+>
+
+<textarea
+id="requirement"
+placeholder="What would you like to automate?"
+required
+></textarea>
+
+<button
+id="submitButton"
+type="submit"
+>
+Get My Free AI Automation Audit
+</button>
+
+</form>
+
+
 <div id="message"></div>
 
-<section class="stats">
-
-<div class="stat">
-<div class="stat-title">CLIENTS</div>
-<div id="totalClients" class="stat-value">0</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">AI AGENTS</div>
-<div id="totalAgents" class="stat-value">0</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">ACTIVE AGENTS</div>
-<div id="activeAgents" class="stat-value">0</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">TASKS</div>
-<div id="totalTasks" class="stat-value">0</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">COMPLETED</div>
-<div id="completedTasks" class="stat-value">0</div>
-</div>
-
-</section>
-
-<div class="nav">
-
-<button class="active" onclick="showSection('overview',this)">Overview</button>
-<button onclick="showSection('clients',this)">Clients</button>
-<button onclick="showSection('agents',this)">AI Agents</button>
-<button onclick="showSection('leads',this)">Leads</button>
-<button onclick="showSection('sales',this)">Sales</button>
-<button onclick="showSection('proposals',this)">Proposals</button>
-<button onclick="showSection('payments',this)">Payments</button>
-<button onclick="showSection('revenue',this)">Revenue</button>
-<button onclick="showSection('workflows',this)">Workflows</button>
-
-</div>
-
-<section id="overview" class="section active">
-
-<div class="grid">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>System Overview</h2>
-<div class="description">
-Live status of your AI business operation.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadAll()">↻ Refresh</button>
-
-</div>
-
-<div id="overviewInfo">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>AI Workforce</h2>
-<div class="description">
-Agents currently available for work.
-</div>
-</div>
-
-</div>
-
-<div id="overviewAgents">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-<div class="card full">
-
-<div class="card-header">
-
-<div>
-<h2>Recent AI Tasks</h2>
-<div class="description">
-Monitor work being executed by your agents.
-</div>
-</div>
-
-</div>
-
-<div id="overviewTasks">
-<div class="empty">Loading...</div>
-</div>
-
 </div>
 
 </div>
 
 </section>
 
-<section id="clients" class="section">
-
-<div class="grid">
-
-<div class="card">
-
-<h2>Add Client</h2>
-
-<div class="description">
-Create a business account for your AI service.
-</div>
-
-<br>
-
-<div class="form-group">
-<label>Client Name</label>
-<input id="clientName" placeholder="Rahul Sharma">
-</div>
-
-<div class="form-group">
-<label>Company</label>
-<input id="clientCompany" placeholder="Sharma Interiors">
-</div>
-
-<button onclick="createClient()">+ Add Client</button>
-
-</div>
-
-<div class="card">
-
-<h2>Clients</h2>
-
-<div class="description">
-Businesses connected to your platform.
-</div>
-
-<br>
-
-<div id="clientsList">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<section id="agents" class="section">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>AI Agent Workforce</h2>
-
-<div class="description">
-Your digital employees performing business tasks.
-</div>
-</div>
-
-<button onclick="loadAll()">↻ Refresh</button>
-
-</div>
-
-<div id="agentsList">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-</section>
-
-<section id="leads" class="section">
-
-<div class="grid">
-
-<div class="card">
-
-<h2>Capture Lead</h2>
-
-<div class="description">
-Add an incoming customer enquiry.
-</div>
-
-<br>
-
-<div class="form-group">
-<label>Name *</label>
-<input id="leadName" placeholder="Rahul Sharma">
-</div>
-
-<div class="form-group">
-<label>Phone *</label>
-<input id="leadPhone" placeholder="9876543210">
-</div>
-
-<div class="form-group">
-<label>Email</label>
-<input id="leadEmail" placeholder="rahul@example.com">
-</div>
-
-<div class="form-group">
-<label>Business</label>
-<input id="leadBusiness" placeholder="Sharma Interiors">
-</div>
-
-<div class="form-group">
-<label>Requirement *</label>
-<textarea id="leadRequirement"
-placeholder="Customer wants a website and WhatsApp automation..."></textarea>
-</div>
-
-<button onclick="createLead()">+ Capture Lead</button>
-
-</div>
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>AI Lead Pipeline</h2>
-
-<div class="description">
-AI qualification and customer intelligence.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadLeads()">↻ Refresh</button>
-
-</div>
-
-<div id="leadsList">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<section id="sales" class="section">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>Sales Control Tower</h2>
-
-<div class="description">
-Track opportunities from lead → qualified → proposal → won.
-</div>
-
-</div>
-
-<button class="btn-secondary" onclick="loadSales()">↻ Refresh Sales</button>
-
-</div>
-
-<div class="pipeline">
-
-<div class="pipeline-box">
-<div class="pipeline-title">OPPORTUNITIES</div>
-<div id="salesOpportunities" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">QUALIFIED</div>
-<div id="salesQualified" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">WON</div>
-<div id="salesWon" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">PIPELINE VALUE</div>
-<div id="salesPipelineValue" class="pipeline-count">₹0</div>
-</div>
-
-</div>
-
-<div class="pipeline">
-
-<div class="pipeline-box">
-<div class="pipeline-title">NEW</div>
-<div id="newSalesCount" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">QUALIFIED</div>
-<div id="qualifiedSalesCount" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">PROPOSAL</div>
-<div id="proposalSalesCount" class="pipeline-count">0</div>
-</div>
-
-<div class="pipeline-box">
-<div class="pipeline-title">WON</div>
-<div id="wonSalesCount" class="pipeline-count">0</div>
-</div>
-
-</div>
-
-<div id="salesList">
-<div class="empty">Loading sales...</div>
-</div>
-
-</div>
-
-</section>
-
-<section id="proposals" class="section">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>AI Proposals</h2>
-<div class="description">
-Create, send and track client proposals.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadProposals()">↻ Refresh</button>
-
-</div>
-
-<div id="proposalsList">
-<div class="empty">Loading proposals...</div>
-</div>
-
-</div>
-
-</section>
-
-<section id="payments" class="section">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>Payments</h2>
-<div class="description">
-Track invoices and customer payments.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadPayments()">↻ Refresh</button>
-
-</div>
-
-<div id="paymentsList">
-<div class="empty">Loading payments...</div>
-</div>
-
-</div>
-
-</section>
-
-<section id="revenue" class="section">
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>Revenue Intelligence</h2>
-<div class="description">
-Track money generated by your AI operation.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadRevenue()">↻ Refresh</button>
-
-</div>
-
-<div id="revenueList">
-<div class="empty">Loading revenue...</div>
-</div>
-
-</div>
-
-</section>
-
-<section id="workflows" class="section">
-
-<div class="grid">
-
-<div class="card">
-
-<h2>Create AI Workflow</h2>
-
-<div class="description">
-Give your AI workforce a business objective.
-</div>
-
-<br>
-
-<div class="form-group">
-
-<label>Client</label>
-
-<select id="clientSelect">
-<option value="">Loading clients...</option>
-</select>
-
-</div>
-
-<div class="form-group">
-
-<label>Business Goal</label>
-
-<textarea id="workflowGoal"
-placeholder="Research 50 local businesses that could use AI automation..."></textarea>
-
-</div>
-
-<button onclick="createWorkflow()">+ Create Workflow</button>
-
-</div>
-
-<div class="card">
-
-<div class="card-header">
-
-<div>
-<h2>Automation Workflows</h2>
-
-<div class="description">
-Multi-step autonomous business processes.
-</div>
-</div>
-
-<button class="btn-secondary" onclick="loadAll()">↻ Refresh</button>
-
-</div>
-
-<div id="workflowsList">
-<div class="empty">Loading...</div>
-</div>
-
-</div>
-
-</div>
-
-</section>
 
 <footer>
-AI Agent Control Tower • Autonomous Business Operations
+
+© 2026 AutoPilot AI · AI Automation for Modern Businesses
+
 </footer>
 
-</div>
 
 <script>
 
-const API = "http://127.0.0.1:8000";
+/*
+==================================================
+RENDER BACKEND
+==================================================
+*/
 
+const API_URL =
+    "https://ai-agent-control-tower.onrender.com";
 
-/* =========================
-   UTILITIES
-========================= */
 
-function escapeHtml(value){
+/*
+==================================================
+FORM
+==================================================
+*/
 
-    if(value === null || value === undefined){
-        return "";
-    }
+const form =
+    document.getElementById("leadForm");
 
-    return String(value)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
+const message =
+    document.getElementById("message");
 
+const submitButton =
+    document.getElementById("submitButton");
 
-function showMessage(text,success=true){
 
-    const box=document.getElementById("message");
+/*
+==================================================
+SUBMIT LEAD
+==================================================
+*/
 
-    box.style.display="block";
-    box.textContent=text;
+form.addEventListener(
+    "submit",
+    async function(event){
 
-    box.style.background=success ? "#103b29" : "#431d27";
-    box.style.color=success ? "#55e69b" : "#ff647c";
+        event.preventDefault();
 
-    setTimeout(()=>{
-        box.style.display="none";
-    },4500);
-}
 
+        const name =
+            document
+            .getElementById("name")
+            .value
+            .trim();
 
-async function api(url,options={}){
 
-    const response=await fetch(API+url,options);
+        const phone =
+            document
+            .getElementById("phone")
+            .value
+            .trim();
 
-    if(!response.ok){
 
-        const text=await response.text();
+        const email =
+            document
+            .getElementById("email")
+            .value
+            .trim();
 
-        throw new Error(
-            `HTTP ${response.status}: ${text}`
-        );
-    }
 
-    const text=await response.text();
+        const business =
+            document
+            .getElementById("business")
+            .value
+            .trim();
 
-    if(!text){
-        return {};
-    }
 
-    try{
-        return JSON.parse(text);
-    }
-    catch{
-        return text;
-    }
-}
+        const requirement =
+            document
+            .getElementById("requirement")
+            .value
+            .trim();
 
-
-function setBackendStatus(online){
-
-    const connection=document.getElementById("connection");
-
-    if(online){
-
-        connection.textContent="● Backend Online";
-        connection.className="connection online";
-
-    }else{
-
-        connection.textContent="● Backend Offline";
-        connection.className="connection offline";
-
-    }
-}
-
-
-async function checkHealth(){
-
-    try{
-
-        await api("/health");
-
-        setBackendStatus(true);
-
-        return true;
-
-    }catch(error){
-
-        console.error("Health check failed:",error);
-
-        setBackendStatus(false);
-
-        return false;
-    }
-}
-
-
-function showSection(id,button){
-
-    document
-        .querySelectorAll(".section")
-        .forEach(section=>{
-            section.classList.remove("active");
-        });
-
-    const section=document.getElementById(id);
-
-    if(section){
-        section.classList.add("active");
-    }
-
-    document
-        .querySelectorAll(".nav button")
-        .forEach(btn=>{
-            btn.classList.remove("active");
-        });
-
-    if(button){
-        button.classList.add("active");
-    }
-
-    if(id==="sales"){
-        loadSales();
-    }
-
-    if(id==="proposals"){
-        loadProposals();
-    }
-
-    if(id==="payments"){
-        loadPayments();
-    }
-
-    if(id==="revenue"){
-        loadRevenue();
-    }
-
-    if(id==="leads"){
-        loadLeads();
-    }
-
-    if(id==="workflows"){
-        loadWorkflows();
-    }
-}
-
-
-/* =========================
-   DASHBOARD
-========================= */
-
-async function loadAll(){
-
-    try{
-
-        const data=await api("/dashboard");
-
-        setBackendStatus(true);
-
-        document.getElementById("totalClients").textContent=
-            data.total_clients ?? 0;
-
-        document.getElementById("totalAgents").textContent=
-            data.total_agents ?? 0;
-
-        document.getElementById("activeAgents").textContent=
-            data.active_agents ?? 0;
-
-        document.getElementById("totalTasks").textContent=
-            data.total_tasks ?? 0;
-
-        document.getElementById("completedTasks").textContent=
-            data.completed_tasks ?? 0;
-
-        const clients=Array.isArray(data.clients)
-            ? data.clients
-            : [];
-
-        const agents=Array.isArray(data.agents)
-            ? data.agents
-            : [];
-
-        const tasks=Array.isArray(data.tasks)
-            ? data.tasks
-            : [];
-
-        const workflows=Array.isArray(data.workflows)
-            ? data.workflows
-            : [];
-
-        renderClients(clients);
-        renderAgents(agents);
-        renderTasks(tasks);
-
-        renderOverview(agents,tasks);
-
-        renderWorkflows(workflows);
-
-        loadClientSelect(clients);
-
-    }
-    catch(error){
-
-        console.error("Dashboard error:",error);
 
         /*
-         * IMPORTANT:
-         * Dashboard errors do NOT automatically mean
-         * the backend is offline.
-         */
-        await checkHealth();
+        Basic validation
+        */
 
-        document.getElementById("overviewInfo").innerHTML=
-            `<div class="empty">
-                Unable to load dashboard data.
-                <br><br>
-                ${escapeHtml(error.message)}
-            </div>`;
-    }
-}
+        if(!name || !phone || !requirement){
 
+            message.className = "error";
 
-function renderOverview(agents,tasks){
+            message.textContent =
+                "Please fill in your name, phone and requirement.";
 
-    document.getElementById("overviewInfo").innerHTML=`
-
-        <div class="item">
-
-            <div class="item-title">
-                Control Tower Status
-            </div>
-
-            <div class="muted">
-                API: Connected
-            </div>
-
-            <span class="status active">
-                Operational
-            </span>
-
-        </div>
-
-        <div class="item">
-
-            <div class="item-title">
-                Autonomous Workforce
-            </div>
-
-            <div class="muted">
-                ${agents.length} registered AI agents
-            </div>
-
-        </div>
-
-        <div class="item">
-
-            <div class="item-title">
-                Automation Queue
-            </div>
-
-            <div class="muted">
-                ${tasks.length} tracked tasks
-            </div>
-
-        </div>
-    `;
-
-
-    renderAgentsInto(
-        agents,
-        document.getElementById("overviewAgents")
-    );
-
-    renderTasksInto(
-        tasks,
-        document.getElementById("overviewTasks")
-    );
-}
-
-
-/* =========================
-   CLIENTS
-========================= */
-
-function loadClientSelect(clients){
-
-    const select=document.getElementById("clientSelect");
-
-    if(!select){
-        return;
-    }
-
-    select.innerHTML="";
-
-    if(!clients.length){
-
-        select.innerHTML=
-            `<option value="">No clients available</option>`;
-
-        return;
-    }
-
-    clients.forEach(client=>{
-
-        const option=document.createElement("option");
-
-        option.value=client.id;
-
-        option.textContent=
-            `${client.name || "Client"} — ${client.company || ""}`;
-
-        select.appendChild(option);
-    });
-}
-
-
-async function createClient(){
-
-    const name=document
-        .getElementById("clientName")
-        .value.trim();
-
-    const company=document
-        .getElementById("clientCompany")
-        .value.trim();
-
-    if(!name || !company){
-
-        showMessage(
-            "Client name and company are required.",
-            false
-        );
-
-        return;
-    }
-
-    try{
-
-        const params=new URLSearchParams();
-
-        params.set("name",name);
-        params.set("company",company);
-
-        await api(
-            "/clients?"+params.toString(),
-            {method:"POST"}
-        );
-
-        document.getElementById("clientName").value="";
-        document.getElementById("clientCompany").value="";
-
-        showMessage("Client created successfully.");
-
-        await loadAll();
-
-    }
-    catch(error){
-
-        showMessage(
-            "Could not create client: "+error.message,
-            false
-        );
-    }
-}
-
-
-function renderClients(clients){
-
-    const container=document.getElementById("clientsList");
-
-    if(!container){
-        return;
-    }
-
-    if(!clients.length){
-
-        container.innerHTML=
-            `<div class="empty">No clients yet.</div>`;
-
-        return;
-    }
-
-    container.innerHTML=clients.map(client=>`
-
-        <div class="item">
-
-            <div class="item-title">
-                ${escapeHtml(client.name)}
-            </div>
-
-            <div class="muted">
-                ${escapeHtml(client.company)}
-            </div>
-
-            <span class="status ${escapeHtml(client.status || "active")}">
-                ${escapeHtml(client.status || "active")}
-            </span>
-
-        </div>
-
-    `).join("");
-}
-
-
-/* =========================
-   AGENTS
-========================= */
-
-function renderAgents(agents){
-
-    const container=document.getElementById("agentsList");
-
-    if(!container){
-        return;
-    }
-
-    renderAgentsInto(agents,container);
-}
-
-
-function renderAgentsInto(agents,container){
-
-    if(!container){
-        return;
-    }
-
-    if(!agents.length){
-
-        container.innerHTML=
-            `<div class="empty">No AI agents registered.</div>`;
-
-        return;
-    }
-
-    container.innerHTML=agents.map(agent=>`
-
-        <div class="item">
-
-            <div class="item-title">
-                🤖 ${escapeHtml(agent.name)}
-            </div>
-
-            <div class="muted">
-                Role: ${escapeHtml(agent.role || "AI Agent")}
-            </div>
-
-            <span class="status ${escapeHtml(agent.status || "active")}">
-                ${escapeHtml(agent.status || "active")}
-            </span>
-
-        </div>
-
-    `).join("");
-}
-
-
-/* =========================
-   TASKS
-========================= */
-
-function renderTasks(tasks){
-
-    /*
-     * FIX:
-     * There is no tasksList element in the HTML.
-     * Tasks are displayed inside overviewTasks.
-     */
-    const container=document.getElementById("overviewTasks");
-
-    if(!container){
-        return;
-    }
-
-    renderTasksInto(tasks,container);
-}
-
-
-function renderTasksInto(tasks,container){
-
-    if(!container){
-        return;
-    }
-
-    if(!tasks.length){
-
-        container.innerHTML=
-            `<div class="empty">No tasks yet.</div>`;
-
-        return;
-    }
-
-    container.innerHTML=tasks.map(task=>`
-
-        <div class="item">
-
-            <div class="item-title">
-                ${escapeHtml(
-                    task.description ||
-                    task.name ||
-                    "AI Task"
-                )}
-            </div>
-
-            <div class="muted">
-                Agent: ${escapeHtml(
-                    task.agent ||
-                    task.agent_id ||
-                    "Unassigned"
-                )}
-            </div>
-
-            <span class="status ${escapeHtml(task.status || "pending")}">
-                ${escapeHtml(task.status || "pending")}
-            </span>
-
-            ${
-                task.result
-                ?
-                `<div class="result">
-                    ${escapeHtml(task.result)}
-                </div>`
-                :
-                ""
-            }
-
-        </div>
-
-    `).join("");
-}
-
-
-/* =========================
-   WORKFLOWS
-========================= */
-
-async function loadWorkflows(){
-
-    try{
-
-        const data=await api("/workflows");
-
-        const workflows=
-            Array.isArray(data)
-            ? data
-            : (
-                data.workflows ||
-                data.items ||
-                []
-            );
-
-        renderWorkflows(workflows);
-
-    }
-    catch(error){
-
-        console.error("Workflow loading error:",error);
-
-        const container=document.getElementById("workflowsList");
-
-        if(container){
-
-            container.innerHTML=
-                `<div class="empty">
-                    Unable to load workflows.
-                    <br><br>
-                    ${escapeHtml(error.message)}
-                </div>`;
+            return;
         }
-    }
-}
 
 
-async function createWorkflow(){
+        /*
+        Show loading state
+        */
 
-    const clientId=document
-        .getElementById("clientSelect")
-        .value;
+        submitButton.disabled = true;
 
-    const goal=document
-        .getElementById("workflowGoal")
-        .value.trim();
+        submitButton.textContent =
+            "Submitting...";
 
-    if(!clientId || !goal){
+        message.className = "";
 
-        showMessage(
-            "Select a client and enter a business goal.",
-            false
-        );
-
-        return;
-    }
-
-    try{
-
-        const params=new URLSearchParams();
-
-        params.set("client_id",clientId);
-        params.set("goal",goal);
-
-        await api(
-            "/workflows?"+params.toString(),
-            {method:"POST"}
-        );
-
-        document.getElementById("workflowGoal").value="";
-
-        showMessage("AI workflow created.");
-
-        await loadAll();
-        await loadWorkflows();
-
-    }
-    catch(error){
-
-        showMessage(
-            "Workflow creation failed: "+error.message,
-            false
-        );
-    }
-}
+        message.textContent =
+            "Submitting your request...";
 
 
-function renderWorkflows(workflows){
+        /*
+        Create query parameters
+        */
 
-    const container=document.getElementById("workflowsList");
-
-    if(!container){
-        return;
-    }
-
-    if(!workflows.length){
-
-        container.innerHTML=
-            `<div class="empty">No workflows created yet.</div>`;
-
-        return;
-    }
-
-    container.innerHTML=workflows.map(workflow=>`
-
-        <div class="item">
-
-            <div class="item-title">
-                ${escapeHtml(workflow.goal || "AI Workflow")}
-            </div>
-
-            <div class="muted">
-                Client:
-                ${escapeHtml(workflow.client_id || "—")}
-            </div>
-
-            <span class="status ${escapeHtml(workflow.status || "pending")}">
-                ${escapeHtml(workflow.status || "pending")}
-            </span>
-
-            <div style="margin-top:12px">
-
-                ${(workflow.steps || []).map(step=>`
-
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        padding:8px 0;
-                        border-bottom:1px solid #182337;
-                    ">
-
-                        <span>
-                            ${escapeHtml(step.name || "Step")}
-                        </span>
-
-                        <span class="status ${escapeHtml(step.status || "pending")}">
-                            ${escapeHtml(step.status || "pending")}
-                        </span>
-
-                    </div>
-
-                `).join("")}
-
-            </div>
-
-            ${
-                workflow.status==="pending"
-                ?
-                `<div class="actions">
-
-                    <button
-                        onclick="executeWorkflow('${escapeHtml(workflow.id)}')"
-                    >
-                        ▶ Execute
-                    </button>
-
-                </div>`
-                :
-                ""
-            }
-
-            ${
-                workflow.result
-                ?
-                `<div class="result">
-                    ${escapeHtml(workflow.result)}
-                </div>`
-                :
-                ""
-            }
-
-        </div>
-
-    `).join("");
-}
-
-
-async function executeWorkflow(id){
-
-    try{
-
-        showMessage("Executing AI workflow...");
-
-        await api(
-            `/workflows/${id}/execute`,
-            {method:"POST"}
-        );
-
-        showMessage("Workflow execution completed.");
-
-        await loadAll();
-        await loadWorkflows();
-
-    }
-    catch(error){
-
-        showMessage(
-            "Workflow failed: "+error.message,
-            false
-        );
-    }
-}
-
-
-/* =========================
-   LEADS
-========================= */
-
-async function createLead(){
-
-    const name=document.getElementById("leadName").value.trim();
-    const phone=document.getElementById("leadPhone").value.trim();
-    const email=document.getElementById("leadEmail").value.trim();
-    const business=document.getElementById("leadBusiness").value.trim();
-    const requirement=document.getElementById("leadRequirement").value.trim();
-
-    if(!name || !phone || !requirement){
-
-        showMessage(
-            "Name, phone and requirement are required.",
-            false
-        );
-
-        return;
-    }
-
-    try{
-
-        const params=new URLSearchParams();
+        const params =
+            new URLSearchParams();
 
         params.set("name",name);
         params.set("phone",phone);
@@ -1695,590 +911,102 @@ async function createLead(){
         params.set("business",business);
         params.set("requirement",requirement);
 
-        await api(
-            "/leads?"+params.toString(),
-            {method:"POST"}
-        );
 
-        [
-            "leadName",
-            "leadPhone",
-            "leadEmail",
-            "leadBusiness",
-            "leadRequirement"
-        ].forEach(id=>{
-            document.getElementById(id).value="";
-        });
-
-        showMessage("Lead captured successfully.");
-
-        await loadLeads();
-
-    }
-    catch(error){
-
-        showMessage(
-            "Lead creation failed: "+error.message,
-            false
-        );
-    }
-}
-
-
-async function loadLeads(){
-
-    try{
-
-        const data=await api("/leads");
-
-        renderLeads(
-            Array.isArray(data)
-            ? data
-            : (data.leads || data.items || [])
-        );
-
-    }
-    catch(error){
-
-        console.error("Leads error:",error);
-
-        document.getElementById("leadsList").innerHTML=
-            `<div class="empty">
-                Unable to load leads.
-                <br><br>
-                ${escapeHtml(error.message)}
-            </div>`;
-    }
-}
-
-
-function renderLeads(leads){
-
-    const container=document.getElementById("leadsList");
-
-    if(!leads.length){
-
-        container.innerHTML=
-            `<div class="empty">No leads yet.</div>`;
-
-        return;
-    }
-
-    container.innerHTML=leads.map(lead=>`
-
-        <div class="item">
-
-            <div class="item-title">
-                ${escapeHtml(lead.name)}
-            </div>
-
-            <div class="muted">
-                ${escapeHtml(
-                    lead.business ||
-                    "Business not specified"
-                )}
-            </div>
-
-            <div class="muted">
-                📞 ${escapeHtml(lead.phone)}
-            </div>
-
-            ${
-                lead.email
-                ?
-                `<div class="muted">
-                    ✉ ${escapeHtml(lead.email)}
-                </div>`
-                :
-                ""
-            }
-
-            <div class="muted">
-                Requirement:
-                ${escapeHtml(lead.requirement)}
-            </div>
-
-            <span class="status ${escapeHtml(lead.status || "new")}">
-                ${escapeHtml(lead.status || "new")}
-            </span>
-
-            ${
-                lead.score !== null &&
-                lead.score !== undefined
-                ?
-                `<div style="margin-top:10px;font-weight:800">
-                    AI Score: ${escapeHtml(lead.score)}/100
-                </div>`
-                :
-                ""
-            }
-
-            ${
-                lead.status==="new"
-                ?
-                `<div class="actions">
-
-                    <button
-                        onclick="processLead('${escapeHtml(lead.id)}')"
-                    >
-                        ✨ AI Analyze
-                    </button>
-
-                </div>`
-                :
-                ""
-            }
-
-            ${
-                lead.ai_analysis
-                ?
-                `<div class="result">
-                    ${escapeHtml(lead.ai_analysis)}
-                </div>`
-                :
-                ""
-            }
-
-        </div>
-
-    `).join("");
-}
-
-
-async function processLead(id){
-
-    try{
-
-        showMessage("AI is analyzing the lead...");
-
-        await api(
-            `/leads/${id}/process`,
-            {method:"POST"}
-        );
-
-        showMessage("Lead analyzed successfully.");
-
-        await loadLeads();
-
-    }
-    catch(error){
-
-        showMessage(
-            "AI analysis failed: "+error.message,
-            false
-        );
-    }
-}
-
-
-/* =========================
-   SALES
-========================= */
-
-async function loadSales(){
-
-    try{
-
-        const data=await api("/sales/dashboard");
-
-        const opportunities=
-            data.opportunities ||
-            data.sales ||
-            data.items ||
-            [];
-
-        const metrics=
-            data.metrics ||
-            data.summary ||
-            data;
-
-        const qualified=
-            metrics.qualified_opportunities ??
-            metrics.qualified ??
-            opportunities.filter(o=>
-                String(o.status||"").toLowerCase()==="qualified"
-            ).length;
-
-        const won=
-            metrics.won_opportunities ??
-            metrics.won ??
-            opportunities.filter(o=>
-                String(o.status||"").toLowerCase()==="won"
-            ).length;
-
-        const pipeline=
-            metrics.pipeline_value ??
-            metrics.total_pipeline ??
-            opportunities.reduce(
-                (sum,o)=>
-                    sum+Number(
-                        o.amount ||
-                        o.value ||
-                        o.deal_value ||
-                        0
-                    ),
-                0
-            );
-
-        document.getElementById("salesOpportunities").textContent=
-            opportunities.length;
-
-        document.getElementById("salesQualified").textContent=
-            qualified;
-
-        document.getElementById("salesWon").textContent=
-            won;
-
-        document.getElementById("salesPipelineValue").textContent=
-            "₹"+Number(pipeline||0).toLocaleString("en-IN");
-
-        const count=status=>
-            opportunities.filter(o=>
-                String(o.status||"").toLowerCase()===status
-            ).length;
-
-        document.getElementById("newSalesCount").textContent=
-            count("new");
-
-        document.getElementById("qualifiedSalesCount").textContent=
-            count("qualified");
-
-        document.getElementById("proposalSalesCount").textContent=
-            count("proposal");
-
-        document.getElementById("wonSalesCount").textContent=
-            count("won");
-
-        const list=document.getElementById("salesList");
-
-        if(!opportunities.length){
-
-            list.innerHTML=
-                `<div class="empty">
-                    No sales opportunities yet.
-                </div>`;
-
-            return;
-        }
-
-        list.innerHTML=opportunities.map(o=>{
-
-            const name=
-                o.client_name ||
-                o.lead_name ||
-                o.name ||
-                "Unnamed Opportunity";
-
-            const company=
-                o.company ||
-                o.business ||
-                "—";
-
-            const value=
-                Number(
-                    o.amount ||
-                    o.value ||
-                    o.deal_value ||
-                    0
+        try{
+
+            /*
+            Send lead to Render backend
+            */
+
+            const response =
+                await fetch(
+                    API_URL +
+                    "/leads?" +
+                    params.toString(),
+                    {
+                        method:"POST"
+                    }
                 );
 
-            const status=o.status || "new";
 
-            return `
+            /*
+            Handle server error
+            */
 
-                <div class="item">
+            if(!response.ok){
 
-                    <div class="item-title">
-                        ${escapeHtml(name)}
-                    </div>
+                const errorText =
+                    await response.text();
 
-                    <div class="muted">
-                        ${escapeHtml(company)}
-                    </div>
-
-                    <div class="money">
-                        ₹${value.toLocaleString("en-IN")}
-                    </div>
-
-                    <span class="status ${escapeHtml(status)}">
-                        ${escapeHtml(status)}
-                    </span>
-
-                </div>
-
-            `;
-
-        }).join("");
-
-    }
-    catch(error){
-
-        console.error("Sales error:",error);
-
-        document.getElementById("salesList").innerHTML=
-            `<div class="empty">
-                Unable to load sales dashboard.
-                <br><br>
-                ${escapeHtml(error.message)}
-            </div>`;
-    }
-}
-
-
-/* =========================
-   PROPOSALS
-========================= */
-
-async function loadProposals(){
-
-    try{
-
-        const data=await api("/proposals");
-
-        const items=
-            Array.isArray(data)
-            ? data
-            : (
-                data.proposals ||
-                data.items ||
-                []
-            );
-
-        renderGeneric(
-            "proposalsList",
-            items,
-            "No proposals yet."
-        );
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        renderError(
-            "proposalsList",
-            error.message
-        );
-    }
-}
-
-
-/* =========================
-   PAYMENTS
-========================= */
-
-async function loadPayments(){
-
-    try{
-
-        const data=await api("/payments");
-
-        const items=
-            Array.isArray(data)
-            ? data
-            : (
-                data.payments ||
-                data.items ||
-                []
-            );
-
-        renderGeneric(
-            "paymentsList",
-            items,
-            "No payments yet."
-        );
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        renderError(
-            "paymentsList",
-            error.message
-        );
-    }
-}
-
-
-/* =========================
-   REVENUE
-========================= */
-
-async function loadRevenue(){
-
-    try{
-
-        const data=await api("/revenue");
-
-        const items=
-            Array.isArray(data)
-            ? data
-            : (
-                data.revenue ||
-                data.items ||
-                []
-            );
-
-        renderGeneric(
-            "revenueList",
-            items,
-            "No revenue records yet."
-        );
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        renderError(
-            "revenueList",
-            error.message
-        );
-    }
-}
-
-
-/* =========================
-   GENERIC
-========================= */
-
-function renderError(id,message=""){
-
-    const container=document.getElementById(id);
-
-    if(!container){
-        return;
-    }
-
-    container.innerHTML=
-        `<div class="empty">
-            Unable to load data.
-            ${
-                message
-                ?
-                `<br><br>${escapeHtml(message)}`
-                :
-                ""
+                throw new Error(
+                    "Server returned " +
+                    response.status +
+                    ": " +
+                    errorText
+                );
             }
-        </div>`;
-}
 
 
-function renderGeneric(id,items,emptyMessage){
+            /*
+            Read response
+            */
 
-    const container=document.getElementById(id);
+            const data =
+                await response.json();
 
-    if(!container){
-        return;
+
+            console.log(
+                "Lead created:",
+                data
+            );
+
+
+            /*
+            Success message
+            */
+
+            message.className =
+                "success";
+
+            message.textContent =
+                "✓ Thank you! Your AI automation request has been received.";
+
+
+            /*
+            Clear form
+            */
+
+            form.reset();
+
+
+        }
+        catch(error){
+
+            console.error(
+                "Lead submission error:",
+                error
+            );
+
+
+            message.className =
+                "error";
+
+            message.textContent =
+                "Something went wrong. Please try again in a moment.";
+
+        }
+        finally{
+
+            submitButton.disabled =
+                false;
+
+            submitButton.textContent =
+                "Get My Free AI Automation Audit";
+
+        }
+
     }
-
-    if(!Array.isArray(items) || !items.length){
-
-        container.innerHTML=
-            `<div class="empty">
-                ${escapeHtml(emptyMessage)}
-            </div>`;
-
-        return;
-    }
-
-    container.innerHTML=items.map(item=>{
-
-        const name=
-            item.name ||
-            item.title ||
-            item.client_name ||
-            item.description ||
-            item.id ||
-            "Record";
-
-        const status=
-            item.status ||
-            item.payment_status ||
-            "active";
-
-        const value=
-            item.amount ??
-            item.value ??
-            item.total ??
-            item.revenue;
-
-        return `
-
-            <div class="item">
-
-                <div class="item-title">
-                    ${escapeHtml(name)}
-                </div>
-
-                ${
-                    value !== undefined
-                    ?
-                    `<div class="money">
-                        ₹${Number(value||0).toLocaleString("en-IN")}
-                    </div>`
-                    :
-                    ""
-                }
-
-                <span class="status ${escapeHtml(status)}">
-                    ${escapeHtml(status)}
-                </span>
-
-                <div class="muted">
-                    ID: ${escapeHtml(item.id || "—")}
-                </div>
-
-            </div>
-
-        `;
-
-    }).join("");
-}
-
-
-/* =========================
-   STARTUP
-========================= */
-
-async function initialize(){
-
-    console.log("AI Agent Control Tower starting...");
-
-    /*
-     * Health is checked independently.
-     * Therefore a dashboard rendering error
-     * cannot falsely show "Backend Offline".
-     */
-
-    await checkHealth();
-
-    await loadAll();
-
-    await loadLeads();
-
-    await loadSales();
-
-    await loadWorkflows();
-
-    console.log("AI Agent Control Tower ready.");
-}
-
-
-/* =========================
-   AUTO REFRESH
-========================= */
-
-initialize();
-
-setInterval(checkHealth,10000);
-
-setInterval(loadAll,10000);
-
-setInterval(loadLeads,10000);
-
-setInterval(loadSales,15000);
+);
 
 </script>
 
