@@ -1,4 +1,4 @@
-﻿```python
+﻿
 import sqlite3
 import uuid
 from datetime import datetime
@@ -238,4 +238,4 @@ def init_db():
                     now()
                 )
             )
-```
+
