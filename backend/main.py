@@ -1,4 +1,4 @@
-from .razorpay_webhook import install as install_razorpay_webhook
+﻿from .razorpay_webhook import install as install_razorpay_webhook
 from backend.database import get_db
 import os
 
@@ -11,8 +11,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from .business_service import get_business_by_token
 import json
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # FASTAPI APPLICATION
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 app = FastAPI(
@@ -33,29 +45,77 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # DATABASE
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 from .database import get_db, init_db, new_id, now
 from .services.workforce_service import provision_agents
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # AI
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 from .ai_service import ask_ai
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # LEADS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 from .leads import lead_manager
 from .lead_agent import process_lead
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # CUSTOMER ONBOARDING
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/clients/onboard")
@@ -251,8 +311,20 @@ def get_client(
     }
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # PROPOSALS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 from .proposals import (
@@ -266,6 +338,12 @@ from .proposals import (
 )
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.on_event("startup")
@@ -274,8 +352,20 @@ def startup():
 
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # DASHBOARD DATA
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.get("/api/dashboard")
@@ -355,8 +445,20 @@ def dashboard_data(request: Request):
     }
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # DASHBOARD
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.get("/dashboard")
@@ -372,8 +474,20 @@ def dashboard_page():
     return FileResponse(dashboard)
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # ROOT
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.get("/")
@@ -382,8 +496,20 @@ def root():
     return FileResponse(frontend)
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # HEALTH
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.get("/health")
@@ -393,8 +519,20 @@ def health():
     }
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # PUBLIC BUSINESS AUTHENTICATION
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 from .business_service import create_business, login_business, logout
@@ -427,8 +565,20 @@ def logout_business(request: Request):
 def current_business(request: Request):
     return {'business':get_current_business(request)}
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # BUSINESS AUTHENTICATION
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 def get_current_business(request: Request):
@@ -453,8 +603,20 @@ def get_current_business(request: Request):
 
     return business
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # DASHBOARD
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.get("/dashboard")
@@ -555,12 +717,36 @@ def dashboard(request: Request):
         "workflows": [dict(x) for x in workflows]
     }
 
-# ============================================================
-# CLIENTS
-# ============================================================
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
 
 # ============================================================
 # CLIENTS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
+# ============================================================
+
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
+# ============================================================
+# CLIENTS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/clients")
@@ -710,8 +896,20 @@ def delete_client(
         "client_id": client_id
     }
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # AGENTS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/agents")
@@ -888,8 +1086,20 @@ def update_agent_status(
         "status": status
     }
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # TASKS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/tasks")
@@ -1022,8 +1232,20 @@ def get_task(
     }
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # EXECUTE TASK
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/tasks/{task_id}/execute")
@@ -1132,8 +1354,20 @@ def execute_task(
             "error": error_message
         }
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # WORKFLOWS
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/workflows")
@@ -1327,8 +1561,20 @@ def get_workflow(
     }
 
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # EXECUTE WORKFLOW
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/workflows/{workflow_id}/execute")
@@ -1540,8 +1786,20 @@ Clearly state when information is an estimate.
             "error": error_message
         }
 
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 # LEAD MANAGEMENT
+
+@app.get("/login")
+def login_page():
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "auth.html"
+    return FileResponse(frontend)
+
 # ============================================================
 
 @app.post("/leads")
@@ -1586,6 +1844,7 @@ def get_leads(
             business_id=business["id"]
         )
     }
+
 
 
 

@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Agent Control Tower</title>
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+    background:#f5f7fb;
+    color:#172033;
+}
+.container{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:30px;
+}
+.card{
+    width:100%;
+    max-width:460px;
+    background:white;
+    border-radius:18px;
+    padding:34px;
+    box-shadow:0 15px 50px rgba(20,30,60,.10);
+}
+.logo{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:8px;
+}
+.subtitle{
+    color:#667085;
+    margin-bottom:28px;
+}
+.tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:24px;
+}
+.tab{
+    flex:1;
+    padding:12px;
+    border:0;
+    border-radius:10px;
+    cursor:pointer;
+    background:#eef1f6;
+    font-weight:600;
+}
+.tab.active{
+    background:#172033;
+    color:white;
+}
+label{
+    display:block;
+    font-size:14px;
+    font-weight:600;
+    margin:14px 0 7px;
+}
+input,select{
+    width:100%;
+    padding:13px;
+    border:1px solid #d8dee9;
+    border-radius:9px;
+    font-size:15px;
+    outline:none;
+}
+input:focus,select:focus{
+    border-color:#172033;
+}
+button.primary{
+    width:100%;
+    margin-top:22px;
+    padding:14px;
+    border:0;
+    border-radius:10px;
+    background:#172033;
+    color:white;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+}
+.message{
+    margin-top:16px;
+    padding:12px;
+    border-radius:9px;
+    display:none;
+    font-size:14px;
+}
+.error{
+    background:#fff0f0;
+    color:#b42318;
+}
+.success{
+    background:#ecfdf3;
+    color:#027a48;
+}
+.hidden{
+    display:none;
+}
+.small{
+    margin-top:18px;
+    font-size:13px;
+    color:#667085;
+    text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="card">
+
+<div class="logo">AI Agent Control Tower</div>
+<div class="subtitle">
+AI-powered WhatsApp lead automation for growing businesses.
+</div>
+
+<div class="tabs">
+<button class="tab active" id="loginTab" onclick="showLogin()">Login</button>
+<button class="tab" id="registerTab" onclick="showRegister()">Create workspace</button>
+</div>
+
+<form id="loginForm">
+
+<label>Business email</label>
+<input id="loginEmail" type="email" required>
+
+<button class="primary" type="submit">
+Login to workspace
+</button>
+
+</form>
+
+<form id="registerForm" class="hidden">
+
+<label>Business name</label>
+<input id="businessName" required>
+
+<label>Owner name</label>
+<input id="ownerName" required>
+
+<label>Business email</label>
+<input id="registerEmail" type="email" required>
+
+<label>Phone</label>
+<input id="phone" required>
+
+<label>Plan</label>
+<select id="plan">
+<option value="Starter">Starter</option>
+<option value="Growth">Growth</option>
+<option value="Business">Business</option>
+</select>
+
+<button class="primary" type="submit">
+Create workspace
+</button>
+
+</form>
+
+<div id="message" class="message"></div>
+
+<div class="small">
+Secure business workspace • AI automation • WhatsApp lead management
+</div>
+
+</div>
+</div>
+
+<script>
+
+const API = "";
+
+function showMessage(text,type){
+    const box=document.getElementById("message");
+    box.textContent=text;
+    box.className="message "+type;
+    box.style.display="block";
+}
+
+function showLogin(){
+
+    document.getElementById("loginForm").classList.remove("hidden");
+    document.getElementById("registerForm").classList.add("hidden");
+
+    document.getElementById("loginTab").classList.add("active");
+    document.getElementById("registerTab").classList.remove("active");
+
+    document.getElementById("message").style.display="none";
+}
+
+function showRegister(){
+
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("registerForm").classList.remove("hidden");
+
+    document.getElementById("loginTab").classList.remove("active");
+    document.getElementById("registerTab").classList.add("active");
+
+    document.getElementById("message").style.display="none";
+}
+
+function saveSession(result){
+
+    if(!result || !result.token){
+        throw new Error("Server did not return a workspace session.");
+    }
+
+    localStorage.setItem("workspace_token",result.token);
+    localStorage.setItem(
+        "workspace_business",
+        JSON.stringify(result.business || {})
+    );
+}
+
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+
+    e.preventDefault();
+
+    try{
+
+        const response=await fetch(API+"/auth/login",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                email:document.getElementById("loginEmail").value
+            })
+        });
+
+        const data=await response.json();
+
+        if(!response.ok){
+            throw new Error(data.detail || "Login failed");
+        }
+
+        saveSession(data);
+
+        showMessage("Login successful. Opening workspace...","success");
+
+        setTimeout(()=>{
+            window.location.href="/";
+        },500);
+
+    }catch(error){
+
+        showMessage(error.message,"error");
+
+    }
+
+});
+
+document.getElementById("registerForm").addEventListener("submit",async e=>{
+
+    e.preventDefault();
+
+    try{
+
+        const response=await fetch(API+"/auth/register",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+
+                business_name:
+                    document.getElementById("businessName").value,
+
+                owner_name:
+                    document.getElementById("ownerName").value,
+
+                email:
+                    document.getElementById("registerEmail").value,
+
+                phone:
+                    document.getElementById("phone").value,
+
+                plan:
+                    document.getElementById("plan").value
+
+            })
+        });
+
+        const data=await response.json();
+
+        if(!response.ok){
+            throw new Error(data.detail || "Registration failed");
+        }
+
+        saveSession(data);
+
+        showMessage(
+            "Workspace created successfully. Opening workspace...",
+            "success"
+        );
+
+        setTimeout(()=>{
+            window.location.href="/";
+        },500);
+
+    }catch(error){
+
+        showMessage(error.message,"error");
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
