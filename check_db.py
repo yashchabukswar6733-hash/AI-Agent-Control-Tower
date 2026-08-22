@@ -1,13 +1,14 @@
-import sqlite3
+﻿import sqlite3
 
-db = sqlite3.connect("backend/control_tower.db")
+db = sqlite3.connect("saas.db")
 
-tables = db.execute(
-    "SELECT name FROM sqlite_master WHERE type='table'"
+rows = db.execute(
+    "SELECT name FROM sqlite_master WHERE type = ? ORDER BY name",
+    ("table",)
 ).fetchall()
 
-print("\nDATABASE TABLES:")
-for table in tables:
-    print("-", table[0])
+print("TABLES:")
+for row in rows:
+    print(" -", row[0])
 
 db.close()
