@@ -130,6 +130,26 @@ def init_db():
         db.executescript(
             """
 
+            CREATE TABLE IF NOT EXISTS businesses (
+                id TEXT PRIMARY KEY,
+                business_name TEXT NOT NULL,
+                owner_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                phone TEXT DEFAULT '',
+                plan TEXT NOT NULL DEFAULT 'Starter',
+                status TEXT NOT NULL DEFAULT 'trial',
+                created_at TEXT NOT NULL
+            );
+
+
+            CREATE TABLE IF NOT EXISTS business_sessions (
+                token TEXT PRIMARY KEY,
+                business_id TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                FOREIGN KEY (business_id) REFERENCES businesses(id)
+            );
+
             CREATE TABLE IF NOT EXISTS clients (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
