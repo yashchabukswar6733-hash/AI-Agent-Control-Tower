@@ -1,7 +1,62 @@
+﻿# Python
 .venv/
-.env
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyd
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*_token.txt
+*token*.txt
+
+# Databases / customer data
 *.db
 *.sqlite
 *.sqlite3
+*.db-*
+*.sqlite-*
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Python test/cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project backups
+backup_*/
+*.backup
+*.bak
+*.broken-backup*
+*.backup-*
+*.before-*
+*.before-*.py
+
+# Temporary/debug artifacts
+current-openapi.json
+public-openapi.json
+check_*.py
+inspect_*.py
+verify_*.py
+test_*.py
+cleanup_*.py
+create_*.py
+mark_*.py
+show_*.py
+save_workspace_token.py
+accept_proposal.py
+send_proposal.py
+init_*.py
+migrate_*.py
+
+# Generated patch/text artifacts
+*.txt
+!requirements.txt
+!render.yaml

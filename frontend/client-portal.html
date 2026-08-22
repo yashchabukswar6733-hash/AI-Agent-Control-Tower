@@ -1,0 +1,725 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Client Portal | AI Automation</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #f5f7fb;
+            color: #172033;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 22px 7%;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #aeb8c8;
+        }
+
+        main {
+            max-width: 1050px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.06);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .progress {
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #2563eb;
+            transition: width .3s;
+        }
+
+        .task {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .task:last-child {
+            border-bottom: 0;
+        }
+
+        .task-status {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d7dce5;
+            border-radius: 9px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 13px 18px;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #b91c1c;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #047857;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Client Automation Portal</h1>
+    <p>Manage your onboarding and automation implementation.</p>
+</header>
+
+<main>
+
+    <section id="loginCard" class="card">
+
+        <h2>Client Access</h2>
+
+        <p>
+            Enter the secure portal token provided by your automation provider.
+        </p>
+
+        <input
+            id="token"
+            type="password"
+            placeholder="Client portal token"
+        >
+
+        <br><br>
+
+        <button onclick="login()">
+            Open Portal
+        </button>
+
+        <div id="loginError" class="error"></div>
+
+    </section>
+
+
+    <section id="portal" class="hidden">
+
+        <section class="card">
+
+            <h2 id="clientName">
+                Client
+            </h2>
+
+            <span
+                id="clientStatus"
+                class="status"
+            >
+                Loading
+            </span>
+
+            <div class="progress">
+                <div
+                    id="progressBar"
+                    class="progress-bar"
+                ></div>
+            </div>
+
+            <p id="progressText">
+                Loading delivery status...
+            </p>
+
+        </section>
+
+
+        <section class="card">
+
+            <h2>Business Requirements</h2>
+
+            <form id="requirementsForm">
+
+                <input
+                    id="businessDescription"
+                    placeholder="Describe your business"
+                    required
+                >
+
+                <input
+                    id="services"
+                    placeholder="Services or products"
+                    required
+                >
+
+                <input
+                    id="targetCustomers"
+                    placeholder="Target customers"
+                >
+
+                <input
+                    id="goals"
+                    placeholder="What do you want to automate?"
+                >
+
+                <input
+                    id="website"
+                    type="url"
+                    placeholder="Website URL"
+                >
+
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="Business email"
+                >
+
+                <input
+                    id="phone"
+                    placeholder="Business phone"
+                >
+
+                <textarea
+                    id="notes"
+                    placeholder="Additional requirements"
+                ></textarea>
+
+                <button type="submit">
+                    Submit Requirements
+                </button>
+
+            </form>
+
+            <div id="formMessage"></div>
+
+        </section>
+
+
+        <section class="card">
+
+            <h2>Implementation Progress</h2>
+
+            <div id="tasks">
+                Loading...
+            </div>
+
+        </section>
+
+    </section>
+
+</main>
+
+
+<script>
+
+const API_BASE =
+    window.location.origin;
+
+let clientToken = "";
+
+
+function headers() {
+
+    return {
+        "Authorization":
+            "Bearer " + clientToken,
+
+        "Content-Type":
+            "application/json"
+    };
+}
+
+
+async function login() {
+
+    const token =
+        document.getElementById(
+            "token"
+        ).value.trim();
+
+    const error =
+        document.getElementById(
+            "loginError"
+        );
+
+    error.textContent = "";
+
+    if (!token) {
+
+        error.textContent =
+            "Enter your portal token.";
+
+        return;
+    }
+
+    clientToken = token;
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE +
+                "/client-portal/me",
+                {
+                    headers: headers()
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Invalid portal token."
+            );
+        }
+
+        localStorage.setItem(
+            "client_portal_token",
+            clientToken
+        );
+
+        document
+            .getElementById("loginCard")
+            .classList.add("hidden");
+
+        document
+            .getElementById("portal")
+            .classList.remove("hidden");
+
+        renderPortal(data);
+
+    } catch (error) {
+
+        error = error.message ||
+            "Unable to open portal.";
+
+        document
+            .getElementById("loginError")
+            .textContent =
+            error;
+    }
+}
+
+
+function renderPortal(data) {
+
+    const client =
+        data.client || {};
+
+    const onboarding =
+        data.onboarding || {};
+
+    const tasks =
+        data.delivery_tasks || [];
+
+    document.getElementById(
+        "clientName"
+    ).textContent =
+        client.name ||
+        "Client Portal";
+
+    document.getElementById(
+        "clientStatus"
+    ).textContent =
+        client.status ||
+        "active";
+
+    renderTasks(tasks);
+
+    loadRequirements(
+        client.id
+    );
+}
+
+
+function renderTasks(tasks) {
+
+    const container =
+        document.getElementById(
+            "tasks"
+        );
+
+    if (!tasks.length) {
+
+        container.innerHTML =
+            "<p>Delivery has not started yet.</p>";
+
+        document.getElementById(
+            "progressBar"
+        ).style.width = "0%";
+
+        return;
+    }
+
+    const completed =
+        tasks.filter(
+            task =>
+                task.status ===
+                "completed"
+        ).length;
+
+    const percentage =
+        Math.round(
+            completed /
+            tasks.length *
+            100
+        );
+
+    document.getElementById(
+        "progressBar"
+    ).style.width =
+        percentage + "%";
+
+    document.getElementById(
+        "progressText"
+    ).textContent =
+        completed +
+        " of " +
+        tasks.length +
+        " delivery tasks completed.";
+
+    container.innerHTML =
+        tasks.map(
+            task => `
+                <div class="task">
+                    <span>
+                        ${escapeHtml(
+                            task.task_name
+                        )}
+                    </span>
+
+                    <span class="task-status">
+                        ${escapeHtml(
+                            task.status
+                        )}
+                    </span>
+                </div>
+            `
+        ).join("");
+}
+
+
+async function loadRequirements(
+    clientId
+) {
+
+    /*
+       Requirements are loaded through the
+       authenticated client endpoint when available.
+       The form remains available for first submission.
+    */
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE +
+                "/client-portal/me",
+                {
+                    headers: headers()
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            data.requirements
+        ) {
+
+            fillRequirements(
+                data.requirements
+            );
+        }
+
+    } catch (_) {
+
+        // Keep the portal usable
+        // even if requirements do not exist yet.
+    }
+}
+
+
+function fillRequirements(
+    requirements
+) {
+
+    document.getElementById(
+        "businessDescription"
+    ).value =
+        requirements.business_description ||
+        "";
+
+    document.getElementById(
+        "services"
+    ).value =
+        requirements.services ||
+        "";
+
+    document.getElementById(
+        "targetCustomers"
+    ).value =
+        requirements.target_customers ||
+        "";
+
+    document.getElementById(
+        "goals"
+    ).value =
+        requirements.goals ||
+        "";
+
+    document.getElementById(
+        "website"
+    ).value =
+        requirements.website_url ||
+        "";
+
+    document.getElementById(
+        "email"
+    ).value =
+        requirements.contact_email ||
+        "";
+
+    document.getElementById(
+        "phone"
+    ).value =
+        requirements.contact_phone ||
+        "";
+
+    document.getElementById(
+        "notes"
+    ).value =
+        requirements.notes ||
+        "";
+}
+
+
+document
+    .getElementById(
+        "requirementsForm"
+    )
+    .addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            const message =
+                document.getElementById(
+                    "formMessage"
+                );
+
+            message.className = "";
+            message.textContent =
+                "Submitting...";
+
+            try {
+
+                const meResponse =
+                    await fetch(
+                        API_BASE +
+                        "/client-portal/me",
+                        {
+                            headers:
+                                headers()
+                        }
+                    );
+
+                const me =
+                    await meResponse.json();
+
+                const clientId =
+                    me.client.id;
+
+                const payload = {
+
+                    business_description:
+                        document.getElementById(
+                            "businessDescription"
+                        ).value,
+
+                    services:
+                        document.getElementById(
+                            "services"
+                        ).value,
+
+                    target_customers:
+                        document.getElementById(
+                            "targetCustomers"
+                        ).value,
+
+                    goals:
+                        document.getElementById(
+                            "goals"
+                        ).value,
+
+                    website_url:
+                        document.getElementById(
+                            "website"
+                        ).value,
+
+                    contact_email:
+                        document.getElementById(
+                            "email"
+                        ).value,
+
+                    contact_phone:
+                        document.getElementById(
+                            "phone"
+                        ).value,
+
+                    notes:
+                        document.getElementById(
+                            "notes"
+                        ).value
+                };
+
+                const response =
+                    await fetch(
+                        API_BASE +
+                        "/clients/" +
+                        clientId +
+                        "/onboarding/requirements",
+                        {
+                            method: "POST",
+                            headers:
+                                headers(),
+                            body:
+                                JSON.stringify(
+                                    payload
+                                )
+                        }
+                    );
+
+                const result =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        result.detail ||
+                        "Unable to submit requirements."
+                    );
+                }
+
+                message.className =
+                    "success";
+
+                message.textContent =
+                    "Requirements submitted successfully.";
+
+            } catch (error) {
+
+                message.className =
+                    "error";
+
+                message.textContent =
+                    error.message;
+            }
+        }
+    );
+
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+const savedToken =
+    localStorage.getItem(
+        "client_portal_token"
+    );
+
+if (savedToken) {
+
+    clientToken =
+        savedToken;
+
+    login();
+}
+
+</script>
+
+</body>
+</html>

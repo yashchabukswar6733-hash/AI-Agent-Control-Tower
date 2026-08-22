@@ -1,0 +1,611 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeadPilot AI — Dashboard</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:#070b14;
+    color:#f8fafc;
+}
+
+.layout{
+    display:flex;
+    min-height:100vh;
+}
+
+.sidebar{
+    width:240px;
+    background:#0b1120;
+    border-right:1px solid #1b263b;
+    padding:24px 16px;
+    position:fixed;
+    top:0;
+    bottom:0;
+}
+
+.logo{
+    font-size:21px;
+    font-weight:800;
+    padding:0 12px 30px;
+}
+
+.logo span{
+    color:#6ee7b7;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.nav button{
+    width:100%;
+    text-align:left;
+    border:0;
+    background:transparent;
+    color:#9ca8bc;
+    padding:12px;
+    border-radius:9px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.nav button:hover,
+.nav button.active{
+    background:#132033;
+    color:#fff;
+}
+
+.main{
+    margin-left:240px;
+    width:calc(100% - 240px);
+}
+
+.topbar{
+    height:72px;
+    border-bottom:1px solid #1b263b;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+}
+
+.business{
+    color:#aab4c5;
+    font-size:14px;
+}
+
+.content{
+    padding:30px;
+}
+
+h1{
+    font-size:28px;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#8995aa;
+    margin-bottom:28px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+}
+
+.card{
+    background:#0d1525;
+    border:1px solid #1b263b;
+    border-radius:14px;
+    padding:20px;
+}
+
+.card-label{
+    color:#8995aa;
+    font-size:13px;
+    margin-bottom:10px;
+}
+
+.card-value{
+    font-size:28px;
+    font-weight:800;
+}
+
+.section{
+    margin-top:28px;
+    background:#0d1525;
+    border:1px solid #1b263b;
+    border-radius:14px;
+    padding:22px;
+}
+
+.section h2{
+    font-size:18px;
+    margin-bottom:18px;
+}
+
+.empty{
+    color:#8995aa;
+    padding:30px 0;
+    text-align:center;
+}
+
+.status{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:20px;
+    background:#10261d;
+    color:#6ee7b7;
+    font-size:12px;
+}
+
+@media(max-width:900px){
+    .sidebar{width:190px}
+    .main{margin-left:190px;width:calc(100% - 190px)}
+    .cards{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:650px){
+    .sidebar{display:none}
+    .main{margin-left:0;width:100%}
+    .cards{grid-template-columns:1fr}
+    .content{padding:18px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+<aside class="sidebar">
+
+<div class="logo">
+LeadPilot <span>AI</span>
+</div>
+
+<div class="nav">
+
+<button class="active" onclick="showSection('overview')">
+Overview
+</button>
+
+<button onclick="showSection('leads')">
+Leads
+</button>
+
+<button onclick="showSection('sales')">
+Sales Pipeline
+</button>
+
+<button onclick="showSection('proposals')">
+Proposals
+</button>
+
+<button onclick="showSection('payments')">
+Payments
+</button>
+
+<button onclick="showSection('agents')">
+AI Agents
+</button>
+
+</div>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+<div>
+<strong>Business Dashboard</strong>
+</div>
+
+<div class="business">
+Workspace: <span id="businessName">Loading...</span>
+</div>
+
+</header>
+
+<div class="content">
+
+<section id="overview">
+
+<h1>Overview</h1>
+
+<p class="subtitle">
+Your AI sales automation workspace.
+</p>
+
+<div class="cards">
+
+<div class="card">
+<div class="card-label">Total Leads</div>
+<div class="card-value" id="totalLeads">—</div>
+</div>
+
+<div class="card">
+<div class="card-label">Open Pipeline</div>
+<div class="card-value" id="pipeline">₹—</div>
+</div>
+
+<div class="card">
+<div class="card-label">Monthly Revenue</div>
+<div class="card-value" id="mrr">₹—</div>
+</div>
+
+<div class="card">
+<div class="card-label">Won Deals</div>
+<div class="card-value" id="wonDeals">—</div>
+</div>
+
+</div>
+
+<div class="section">
+
+<h2>System Status</h2>
+
+<span class="status">AI Automation Online</span>
+
+</div>
+
+</section>
+
+
+<section id="leads" style="display:none">
+
+<h1>Leads</h1>
+
+<p class="subtitle">
+AI-qualified customer enquiries.
+</p>
+
+<div class="section">
+
+<div id="leadsData" class="empty">
+Loading leads...
+</div>
+
+</div>
+
+</section>
+
+
+<section id="sales" style="display:none">
+
+<h1>Sales Pipeline</h1>
+
+<p class="subtitle">
+Track opportunities from qualification to closed deal.
+</p>
+
+<div class="section">
+
+<div id="salesData" class="empty">
+Loading sales...
+</div>
+
+</div>
+
+</section>
+
+
+<section id="proposals" style="display:none">
+
+<h1>Proposals</h1>
+
+<p class="subtitle">
+Manage proposals sent to prospects.
+</p>
+
+<div class="section">
+
+<div id="proposalData" class="empty">
+Loading proposals...
+</div>
+
+</div>
+
+</section>
+
+
+<section id="payments" style="display:none">
+
+<h1>Payments</h1>
+
+<p class="subtitle">
+Track customer payments and revenue.
+</p>
+
+<div class="section">
+
+<div id="paymentData" class="empty">
+Loading payments...
+</div>
+
+</div>
+
+</section>
+
+
+<section id="agents" style="display:none">
+
+<h1>AI Agents</h1>
+
+<p class="subtitle">
+Your automated workforce.
+</p>
+
+<div class="section">
+
+<div id="agentData" class="empty">
+Loading AI agents...
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+</main>
+
+</div>
+
+
+<script>
+
+function showSection(id){
+
+document.querySelectorAll(".content > section")
+.forEach(section=>{
+    section.style.display="none";
+});
+
+document.getElementById(id).style.display="block";
+
+document.querySelectorAll(".nav button")
+.forEach(button=>{
+    button.classList.remove("active");
+});
+
+event.target.classList.add("active");
+
+}
+
+async function api(path){
+
+const token=localStorage.getItem("leadpilot_token");
+
+const response=await fetch(path,{
+    headers:{
+        "Authorization":"Bearer "+token
+    }
+});
+
+if(!response.ok){
+    throw new Error("API request failed: "+response.status);
+}
+
+return response.json();
+
+}
+
+
+async function loadDashboard(){
+
+try{
+
+const data=await api("/sales/dashboard");
+
+if(data.business_id){
+    document.getElementById("businessName").textContent=
+        data.business_id;
+}
+
+document.getElementById("pipeline").textContent=
+    "₹"+Number(
+        data.pipeline?.open_pipeline || 0
+    ).toLocaleString("en-IN");
+
+document.getElementById("mrr").textContent=
+    "₹"+Number(
+        data.revenue?.monthly_recurring_revenue || 0
+    ).toLocaleString("en-IN");
+
+document.getElementById("wonDeals").textContent=
+    data.deals?.won || 0;
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function loadLeads(){
+
+try{
+
+const data=await api("/leads");
+
+const leads=data.leads || [];
+
+document.getElementById("totalLeads").textContent=
+    leads.length;
+
+document.getElementById("leadsData").innerHTML=
+    leads.length
+    ? leads.map(lead=>`
+        <div style="padding:14px 0;border-bottom:1px solid #1b263b">
+            <strong>${lead.name || "Unknown"}</strong>
+            <div style="color:#8995aa;font-size:13px">
+                ${lead.business || ""}
+            </div>
+        </div>
+    `).join("")
+    : "No leads yet.";
+
+}catch(error){
+
+document.getElementById("leadsData").textContent=
+    "Unable to load leads.";
+
+}
+
+}
+
+
+async function loadSales(){
+
+try{
+
+const data=await api("/sales");
+
+const sales=data.sales || [];
+
+document.getElementById("salesData").innerHTML=
+    sales.length
+    ? sales.map(sale=>`
+        <div style="padding:14px 0;border-bottom:1px solid #1b263b">
+            <strong>${sale.service || "Sales Opportunity"}</strong>
+            <div style="color:#8995aa;font-size:13px">
+                Stage: ${sale.stage}
+                · Setup: ₹${Number(sale.setup_fee || 0).toLocaleString("en-IN")}
+            </div>
+        </div>
+    `).join("")
+    : "No sales opportunities yet.";
+
+}catch(error){
+
+document.getElementById("salesData").textContent=
+    "Unable to load sales.";
+
+}
+
+}
+
+
+async function loadProposals(){
+
+try{
+
+const data=await api("/proposals");
+
+const proposals=data.proposals || [];
+
+document.getElementById("proposalData").innerHTML=
+    proposals.length
+    ? proposals.map(p=>`
+        <div style="padding:14px 0;border-bottom:1px solid #1b263b">
+            <strong>${p.company}</strong>
+            <div style="color:#8995aa;font-size:13px">
+                ${p.service} · ${p.status}
+            </div>
+        </div>
+    `).join("")
+    : "No proposals yet.";
+
+}catch(error){
+
+document.getElementById("proposalData").textContent=
+    "Unable to load proposals.";
+
+}
+
+}
+
+
+async function loadPayments(){
+
+try{
+
+const data=await api("/payments");
+
+const payments=data.payments || [];
+
+document.getElementById("paymentData").innerHTML=
+    payments.length
+    ? payments.map(p=>`
+        <div style="padding:14px 0;border-bottom:1px solid #1b263b">
+            <strong>${p.company}</strong>
+            <div style="color:#8995aa;font-size:13px">
+                ₹${Number(p.amount || 0).toLocaleString("en-IN")}
+                · ${p.status}
+            </div>
+        </div>
+    `).join("")
+    : "No payments yet.";
+
+}catch(error){
+
+document.getElementById("paymentData").textContent=
+    "Unable to load payments.";
+
+}
+
+}
+
+
+async function loadAgents(){
+
+try{
+
+const data=await api("/agents");
+
+const agents=data.agents || [];
+
+document.getElementById("agentData").innerHTML=
+    agents.length
+    ? agents.map(agent=>`
+        <div style="padding:14px 0;border-bottom:1px solid #1b263b">
+            <strong>${agent.name}</strong>
+            <div style="color:#8995aa;font-size:13px">
+                ${agent.role || ""} · ${agent.status || ""}
+            </div>
+        </div>
+    `).join("")
+    : "No AI agents provisioned.";
+
+}catch(error){
+
+document.getElementById("agentData").textContent=
+    "Unable to load agents.";
+
+}
+
+}
+
+
+async function loadAll(){
+
+await Promise.all([
+    loadDashboard(),
+    loadLeads(),
+    loadSales(),
+    loadProposals(),
+    loadPayments(),
+    loadAgents()
+]);
+
+}
+
+loadAll();
+
+</script>
+
+</body>
+</html>

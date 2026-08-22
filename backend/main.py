@@ -1,14 +1,44 @@
-﻿from pathlib import Path
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+﻿from .razorpay_webhook import install as install_razorpay_webhook
+from backend.database import get_db
+import os
+
+from backend.whatsapp_service import send_whatsapp_message, verify_whatsapp_configuration
+from backend.api.whatsapp import router as whatsapp_router
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from pathlib import Path
+from fastapi.middleware.cors import CORSMiddleware
+from .business_service import get_business_by_token
 import json
+
+# ============================================================
+# FASTAPI APPLICATION
+# ============================================================
+
+app = FastAPI(
+
+    title="AI Agent Control Tower",
+    version="1.0.0"
+)
+
+install_razorpay_webhook(app)
+
+app.include_router(whatsapp_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ============================================================
 # DATABASE
 # ============================================================
 
 from .database import get_db, init_db, new_id, now
+from .services.workforce_service import provision_agents
 
 # ============================================================
 # AI
@@ -22,6 +52,204 @@ from .ai_service import ask_ai
 
 from .leads import lead_manager
 from .lead_agent import process_lead
+
+
+# ============================================================
+# CUSTOMER ONBOARDING
+# ============================================================
+
+@app.post("/clients/onboard")
+def onboard_client(
+    request: Request,
+    lead_id: str,
+    service: str = "",
+    notes: str = ""
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
+
+    with get_db() as db:
+
+        lead = db.execute(
+            """
+            SELECT *
+            FROM leads
+            WHERE id = ?
+              AND business_id = ?
+            """,
+            (
+                lead_id,
+                business_id
+            )
+        ).fetchone()
+
+        if not lead:
+            return {
+                "error": "Lead not found"
+            }
+
+        company = lead["business"] or lead["name"]
+
+        existing = db.execute(
+            """
+            SELECT *
+            FROM clients
+            WHERE business_id = ?
+              AND company = ?
+            LIMIT 1
+            """,
+            (
+                business_id,
+                company
+            )
+        ).fetchone()
+
+        if existing:
+            return {
+                "message": "Client already onboarded",
+                "client": dict(existing)
+            }
+
+        client_id = new_id()
+        created_at = now()
+
+        db.execute(
+            """
+            INSERT INTO clients
+            (
+                id,
+                name,
+                company,
+                status,
+                created_at,
+                business_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                client_id,
+                lead["name"],
+                company,
+                "active",
+                created_at,
+                business_id
+            )
+        )
+
+        db.execute(
+            """
+            UPDATE leads
+            SET status = ?,
+                updated_at = ?
+            WHERE id = ?
+              AND business_id = ?
+            """,
+            (
+                "won",
+                created_at,
+                lead_id,
+                business_id
+            )
+        )
+
+        db.execute(
+            """
+            INSERT INTO activity_log
+            (
+                entity_type,
+                entity_id,
+                action,
+                details,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "client",
+                client_id,
+                "client_onboarded",
+                service or notes or "Client onboarding completed",
+                created_at
+            )
+        )
+
+    return {
+        "message": "Client onboarded successfully",
+        "client": {
+            "id": client_id,
+            "name": lead["name"],
+            "company": company,
+            "status": "active",
+            "business_id": business_id,
+            "created_at": created_at
+        }
+    }
+
+
+@app.get("/clients/{client_id}")
+def get_client(
+    request: Request,
+    client_id: str
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
+
+    with get_db() as db:
+
+        client = db.execute(
+            """
+            SELECT *
+            FROM clients
+            WHERE id = ?
+              AND business_id = ?
+            """,
+            (
+                client_id,
+                business_id
+            )
+        ).fetchone()
+
+        if not client:
+            return {
+                "error": "Client not found"
+            }
+
+        payments = db.execute(
+            """
+            SELECT *
+            FROM payments
+            WHERE client_id = ?
+              AND business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (
+                client_id,
+                business_id
+            )
+        ).fetchall()
+
+        revenue = db.execute(
+            """
+            SELECT *
+            FROM revenue
+            WHERE client_id = ?
+              AND business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (
+                client_id,
+                business_id
+            )
+        ).fetchall()
+
+    return {
+        "client": dict(client),
+        "payments": [dict(x) for x in payments],
+        "revenue": [dict(x) for x in revenue]
+    }
+
 
 # ============================================================
 # PROPOSALS
@@ -37,55 +265,111 @@ from .proposals import (
     reject_proposal as proposal_reject,
 )
 
-# ============================================================
-# PAYMENTS
-# ============================================================
 
-from .payments import payment_manager
-from .api.auth import router as auth_router
-from .api.whatsapp import router as whatsapp_router
-from .api.business import router as business_router
-from .api.conversations import router as conversations_router
-from .api.business_dashboard import router as dashboard_router
-
-
-# ============================================================
-# APP
-# ============================================================
-
-app = FastAPI(
-    title="AI Agent Control Tower",
-    version="1.0.0"
-)
-
-
-app.include_router(auth_router)
-app.include_router(whatsapp_router)
-app.include_router(business_router)
-app.include_router(conversations_router)
-app.include_router(dashboard_router)
-
-
-# ============================================================
-# CORS
-# ============================================================
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# ============================================================
-# STARTUP
 # ============================================================
 
 @app.on_event("startup")
 def startup():
     init_db()
+
+
+
+# ============================================================
+# DASHBOARD DATA
+# ============================================================
+
+@app.get("/api/dashboard")
+def dashboard_data(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
+
+    with get_db() as db:
+
+        leads = db.execute(
+            '''
+            SELECT *
+            FROM leads
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            ''',
+            (business_id,)
+        ).fetchall()
+
+        sales = db.execute(
+            '''
+            SELECT *
+            FROM sales_opportunities
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            ''',
+            (business_id,)
+        ).fetchall()
+
+        proposals = db.execute(
+            '''
+            SELECT *
+            FROM proposals
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            ''',
+            (business_id,)
+        ).fetchall()
+
+        payments = db.execute(
+            '''
+            SELECT *
+            FROM payments
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            ''',
+            (business_id,)
+        ).fetchall()
+
+    paid_revenue = sum(
+        float(x["amount"] or 0)
+        for x in payments
+        if x["status"] == "paid"
+    )
+
+    pending_revenue = sum(
+        float(x["amount"] or 0)
+        for x in payments
+        if x["status"] == "pending"
+    )
+
+    return {
+        "business_id": business_id,
+        "summary": {
+            "leads": len(leads),
+            "sales_opportunities": len(sales),
+            "proposals": len(proposals),
+            "payments": len(payments),
+            "paid_revenue": paid_revenue,
+            "pending_revenue": pending_revenue
+        },
+        "leads": [dict(x) for x in leads],
+        "sales": [dict(x) for x in sales],
+        "proposals": [dict(x) for x in proposals],
+        "payments": [dict(x) for x in payments]
+    }
+
+
+# ============================================================
+# DASHBOARD
+# ============================================================
+
+@app.get("/dashboard")
+def dashboard_page():
+    dashboard = Path(__file__).resolve().parent.parent / "frontend" / "dashboard.html"
+
+    if not dashboard.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Dashboard frontend not found"
+        )
+
+    return FileResponse(dashboard)
 
 
 # ============================================================
@@ -110,32 +394,93 @@ def health():
 
 
 # ============================================================
+# BUSINESS AUTHENTICATION
+# ============================================================
+
+def get_current_business(request: Request):
+
+    authorization = request.headers.get("Authorization", "")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Business authentication required"
+        )
+
+    token = authorization[7:].strip()
+
+    business = get_business_by_token(token)
+
+    if not business:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired workspace session"
+        )
+
+    return business
+
+# ============================================================
 # DASHBOARD
 # ============================================================
 
 @app.get("/dashboard")
-def dashboard():
+def dashboard(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
         clients = db.execute(
-            "SELECT * FROM clients ORDER BY created_at DESC"
+            """
+            SELECT *
+            FROM clients
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (business_id,)
         ).fetchall()
 
         agents = db.execute(
-            "SELECT * FROM agents ORDER BY created_at DESC"
+            """
+            SELECT *
+            FROM agents
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (business_id,)
         ).fetchall()
 
         tasks = db.execute(
-            "SELECT * FROM tasks ORDER BY created_at DESC"
+            """
+            SELECT *
+            FROM tasks
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (business_id,)
         ).fetchall()
 
         workflows = db.execute(
-            "SELECT * FROM workflows ORDER BY created_at DESC"
+            """
+            SELECT *
+            FROM workflows
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            """,
+            (business_id,)
         ).fetchall()
 
     return {
         "status": "online",
+        "business": {
+            "id": business["id"],
+            "business_name": business["business_name"],
+            "owner_name": business["owner_name"],
+            "email": business["email"],
+            "plan": business["plan"],
+            "status": business["status"]
+        },
 
         "total_clients": len(clients),
 
@@ -176,6 +521,9 @@ def dashboard():
         "workflows": [dict(x) for x in workflows]
     }
 
+# ============================================================
+# CLIENTS
+# ============================================================
 
 # ============================================================
 # CLIENTS
@@ -183,9 +531,13 @@ def dashboard():
 
 @app.post("/clients")
 def create_client(
+    request: Request,
     name: str,
     company: str
 ):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     client_id = new_id()
     created_at = now()
@@ -195,15 +547,16 @@ def create_client(
         db.execute(
             """
             INSERT INTO clients
-            (id, name, company, status, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            (id, name, company, status, created_at, business_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 client_id,
                 name,
                 company,
                 "active",
-                created_at
+                created_at,
+                business_id
             )
         )
 
@@ -211,6 +564,7 @@ def create_client(
         "message": "Client created successfully",
         "client": {
             "id": client_id,
+            "business_id": business_id,
             "name": name,
             "company": company,
             "status": "active",
@@ -220,7 +574,10 @@ def create_client(
 
 
 @app.get("/clients")
-def get_clients():
+def get_clients(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -228,8 +585,10 @@ def get_clients():
             """
             SELECT *
             FROM clients
+            WHERE business_id = ?
             ORDER BY created_at DESC
-            """
+            """,
+            (business_id,)
         ).fetchall()
 
     return {
@@ -238,7 +597,13 @@ def get_clients():
 
 
 @app.get("/clients/{client_id}")
-def get_client(client_id: str):
+def get_client(
+    request: Request,
+    client_id: str
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -247,8 +612,12 @@ def get_client(client_id: str):
             SELECT *
             FROM clients
             WHERE id = ?
+            AND business_id = ?
             """,
-            (client_id,)
+            (
+                client_id,
+                business_id
+            )
         ).fetchone()
 
     if not row:
@@ -262,7 +631,13 @@ def get_client(client_id: str):
 
 
 @app.delete("/clients/{client_id}")
-def delete_client(client_id: str):
+def delete_client(
+    request: Request,
+    client_id: str
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -271,8 +646,12 @@ def delete_client(client_id: str):
             SELECT *
             FROM clients
             WHERE id = ?
+            AND business_id = ?
             """,
-            (client_id,)
+            (
+                client_id,
+                business_id
+            )
         ).fetchone()
 
         if not row:
@@ -284,8 +663,12 @@ def delete_client(client_id: str):
             """
             DELETE FROM clients
             WHERE id = ?
+            AND business_id = ?
             """,
-            (client_id,)
+            (
+                client_id,
+                business_id
+            )
         )
 
     return {
@@ -293,16 +676,19 @@ def delete_client(client_id: str):
         "client_id": client_id
     }
 
-
 # ============================================================
 # AGENTS
 # ============================================================
 
 @app.post("/agents")
 def create_agent(
+    request: Request,
     name: str,
     role: str
 ):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     agent_id = new_id()
     created_at = now()
@@ -312,15 +698,23 @@ def create_agent(
         db.execute(
             """
             INSERT INTO agents
-            (id, name, role, status, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            (
+                id,
+                name,
+                role,
+                status,
+                created_at,
+                business_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 agent_id,
                 name,
                 role,
                 "active",
-                created_at
+                created_at,
+                business_id
             )
         )
 
@@ -328,6 +722,7 @@ def create_agent(
         "message": "Agent created successfully",
         "agent": {
             "id": agent_id,
+            "business_id": business_id,
             "name": name,
             "role": role,
             "status": "active",
@@ -337,7 +732,10 @@ def create_agent(
 
 
 @app.get("/agents")
-def get_agents():
+def get_agents(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -345,8 +743,10 @@ def get_agents():
             """
             SELECT *
             FROM agents
+            WHERE business_id = ?
             ORDER BY created_at DESC
-            """
+            """,
+            (business_id,)
         ).fetchall()
 
     return {
@@ -355,7 +755,13 @@ def get_agents():
 
 
 @app.get("/agents/{agent_id}")
-def get_agent(agent_id: str):
+def get_agent(
+    request: Request,
+    agent_id: str
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -364,8 +770,12 @@ def get_agent(agent_id: str):
             SELECT *
             FROM agents
             WHERE id = ?
+            AND business_id = ?
             """,
-            (agent_id,)
+            (
+                agent_id,
+                business_id
+            )
         ).fetchone()
 
     if not row:
@@ -378,15 +788,84 @@ def get_agent(agent_id: str):
     }
 
 
+@app.patch("/agents/{agent_id}/status")
+def update_agent_status(
+    request: Request,
+    agent_id: str,
+    status: str
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
+
+    allowed_statuses = {
+        "active",
+        "working",
+        "idle",
+        "paused",
+        "offline"
+    }
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid agent status"
+        )
+
+    with get_db() as db:
+
+        row = db.execute(
+            """
+            SELECT *
+            FROM agents
+            WHERE id = ?
+            AND business_id = ?
+            """,
+            (
+                agent_id,
+                business_id
+            )
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=404,
+                detail="Agent not found"
+            )
+
+        db.execute(
+            """
+            UPDATE agents
+            SET status = ?
+            WHERE id = ?
+            AND business_id = ?
+            """,
+            (
+                status,
+                agent_id,
+                business_id
+            )
+        )
+
+    return {
+        "message": "Agent status updated",
+        "agent_id": agent_id,
+        "business_id": business_id,
+        "status": status
+    }
+
 # ============================================================
 # TASKS
 # ============================================================
 
 @app.post("/tasks")
 def create_task(
+    request: Request,
     agent: str,
     description: str
 ):
+    business = get_current_business(request)
+    business_id = business["id"]
 
     task_id = new_id()
     created_at = now()
@@ -398,20 +877,33 @@ def create_task(
             SELECT *
             FROM agents
             WHERE id = ?
+              AND business_id = ?
             """,
-            (agent,)
+            (
+                agent,
+                business_id
+            )
         ).fetchone()
 
         if not agent_row:
-            return {
-                "error": "Agent not found"
-            }
+            raise HTTPException(
+                status_code=404,
+                detail="Agent not found in this workspace"
+            )
 
         db.execute(
             """
             INSERT INTO tasks
-            (id, agent, description, status, result, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (
+                id,
+                agent,
+                description,
+                status,
+                result,
+                created_at,
+                business_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 task_id,
@@ -419,7 +911,8 @@ def create_task(
                 description,
                 "pending",
                 None,
-                created_at
+                created_at,
+                business_id
             )
         )
 
@@ -431,13 +924,17 @@ def create_task(
             "description": description,
             "status": "pending",
             "result": None,
-            "created_at": created_at
+            "created_at": created_at,
+            "business_id": business_id
         }
     }
 
 
 @app.get("/tasks")
-def get_tasks():
+def get_tasks(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -445,8 +942,10 @@ def get_tasks():
             """
             SELECT *
             FROM tasks
+            WHERE business_id = ?
             ORDER BY created_at DESC
-            """
+            """,
+            (business_id,)
         ).fetchall()
 
     return {
@@ -455,7 +954,13 @@ def get_tasks():
 
 
 @app.get("/tasks/{task_id}")
-def get_task(task_id: str):
+def get_task(
+    task_id: str,
+    request: Request
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -464,14 +969,19 @@ def get_task(task_id: str):
             SELECT *
             FROM tasks
             WHERE id = ?
+              AND business_id = ?
             """,
-            (task_id,)
+            (
+                task_id,
+                business_id
+            )
         ).fetchone()
 
     if not row:
-        return {
-            "error": "Task not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found in this workspace"
+        )
 
     return {
         "task": dict(row)
@@ -483,7 +993,13 @@ def get_task(task_id: str):
 # ============================================================
 
 @app.post("/tasks/{task_id}/execute")
-def execute_task(task_id: str):
+def execute_task(
+    task_id: str,
+    request: Request
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -492,24 +1008,31 @@ def execute_task(task_id: str):
             SELECT *
             FROM tasks
             WHERE id = ?
+              AND business_id = ?
             """,
-            (task_id,)
+            (
+                task_id,
+                business_id
+            )
         ).fetchone()
 
         if not task:
-            return {
-                "error": "Task not found"
-            }
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found in this workspace"
+            )
 
         db.execute(
             """
             UPDATE tasks
             SET status = ?
             WHERE id = ?
+              AND business_id = ?
             """,
             (
                 "running",
-                task_id
+                task_id,
+                business_id
             )
         )
 
@@ -529,11 +1052,13 @@ def execute_task(task_id: str):
                 SET status = ?,
                     result = ?
                 WHERE id = ?
+                  AND business_id = ?
                 """,
                 (
                     "completed",
                     result,
-                    task_id
+                    task_id,
+                    business_id
                 )
             )
 
@@ -556,11 +1081,13 @@ def execute_task(task_id: str):
                 SET status = ?,
                     result = ?
                 WHERE id = ?
+                  AND business_id = ?
                 """,
                 (
                     "failed",
                     error_message,
-                    task_id
+                    task_id,
+                    business_id
                 )
             )
 
@@ -571,16 +1098,19 @@ def execute_task(task_id: str):
             "error": error_message
         }
 
-
 # ============================================================
 # WORKFLOWS
 # ============================================================
 
 @app.post("/workflows")
 def create_workflow(
+    request: Request,
     client_id: str,
     goal: str
 ):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     workflow_id = new_id()
     created_at = now()
@@ -592,20 +1122,33 @@ def create_workflow(
             SELECT *
             FROM clients
             WHERE id = ?
+              AND business_id = ?
             """,
-            (client_id,)
+            (
+                client_id,
+                business_id
+            )
         ).fetchone()
 
         if not client:
-            return {
-                "error": "Client not found"
-            }
+            raise HTTPException(
+                status_code=404,
+                detail="Client not found in this workspace"
+            )
 
         db.execute(
             """
             INSERT INTO workflows
-            (id, client_id, goal, status, result, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (
+                id,
+                client_id,
+                goal,
+                status,
+                result,
+                created_at,
+                business_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 workflow_id,
@@ -613,7 +1156,8 @@ def create_workflow(
                 goal,
                 "pending",
                 None,
-                created_at
+                created_at,
+                business_id
             )
         )
 
@@ -645,13 +1189,17 @@ def create_workflow(
             "goal": goal,
             "status": "pending",
             "result": None,
-            "created_at": created_at
+            "created_at": created_at,
+            "business_id": business_id
         }
     }
 
 
 @app.get("/workflows")
-def get_workflows():
+def get_workflows(request: Request):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -659,8 +1207,10 @@ def get_workflows():
             """
             SELECT *
             FROM workflows
+            WHERE business_id = ?
             ORDER BY created_at DESC
-            """
+            """,
+            (business_id,)
         ).fetchall()
 
         output = []
@@ -692,7 +1242,13 @@ def get_workflows():
 
 
 @app.get("/workflows/{workflow_id}")
-def get_workflow(workflow_id: str):
+def get_workflow(
+    workflow_id: str,
+    request: Request
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -701,14 +1257,19 @@ def get_workflow(workflow_id: str):
             SELECT *
             FROM workflows
             WHERE id = ?
+              AND business_id = ?
             """,
-            (workflow_id,)
+            (
+                workflow_id,
+                business_id
+            )
         ).fetchone()
 
         if not workflow:
-            return {
-                "error": "Workflow not found"
-            }
+            raise HTTPException(
+                status_code=404,
+                detail="Workflow not found in this workspace"
+            )
 
         steps = db.execute(
             """
@@ -737,7 +1298,13 @@ def get_workflow(workflow_id: str):
 # ============================================================
 
 @app.post("/workflows/{workflow_id}/execute")
-def execute_workflow(workflow_id: str):
+def execute_workflow(
+    workflow_id: str,
+    request: Request
+):
+
+    business = get_current_business(request)
+    business_id = business["id"]
 
     with get_db() as db:
 
@@ -746,24 +1313,31 @@ def execute_workflow(workflow_id: str):
             SELECT *
             FROM workflows
             WHERE id = ?
+              AND business_id = ?
             """,
-            (workflow_id,)
+            (
+                workflow_id,
+                business_id
+            )
         ).fetchone()
 
         if not workflow:
-            return {
-                "error": "Workflow not found"
-            }
+            raise HTTPException(
+                status_code=404,
+                detail="Workflow not found in this workspace"
+            )
 
         db.execute(
             """
             UPDATE workflows
             SET status = ?
             WHERE id = ?
+              AND business_id = ?
             """,
             (
                 "running",
-                workflow_id
+                workflow_id,
+                business_id
             )
         )
 
@@ -872,11 +1446,13 @@ Clearly state when information is an estimate.
                 SET status = ?,
                     result = ?
                 WHERE id = ?
+                  AND business_id = ?
                 """,
                 (
                     "completed",
                     final_result,
-                    workflow_id
+                    workflow_id,
+                    business_id
                 )
             )
 
@@ -899,11 +1475,13 @@ Clearly state when information is an estimate.
                 SET status = ?,
                     result = ?
                 WHERE id = ?
+                  AND business_id = ?
                 """,
                 (
                     "failed",
                     error_message,
-                    workflow_id
+                    workflow_id,
+                    business_id
                 )
             )
 
@@ -928,13 +1506,13 @@ Clearly state when information is an estimate.
             "error": error_message
         }
 
-
 # ============================================================
 # LEAD MANAGEMENT
 # ============================================================
 
 @app.post("/leads")
 def create_lead(
+    request: Request,
     name: str,
     phone: str,
     email: str = "",
@@ -942,7 +1520,11 @@ def create_lead(
     requirement: str = ""
 ):
 
+    current_business = get_current_business(request)
+    business_id = current_business["id"]
+
     lead = lead_manager.create_lead(
+        business_id=business_id,
         name=name,
         phone=phone,
         email=email,
@@ -957,1006 +1539,19 @@ def create_lead(
 
 
 @app.get("/leads")
-def get_leads():
-
-    return {
-        "leads": lead_manager.list_leads()
-    }
-
-
-@app.get("/leads/{lead_id}")
-def get_lead(lead_id: str):
-
-    lead = lead_manager.get_lead(lead_id)
-
-    if not lead:
-        return {
-            "error": "Lead not found"
-        }
-
-    return {
-        "lead": lead
-    }
-
-
-@app.patch("/leads/{lead_id}")
-def update_lead(
-    lead_id: str,
-    status: str = None,
-    score: int = None,
-    ai_analysis: str = None,
-    follow_up: str = None
+def get_leads(
+    request: Request
 ):
 
-    updates = {}
-
-    if status is not None:
-        updates["status"] = status
-
-    if score is not None:
-        updates["score"] = score
-
-    if ai_analysis is not None:
-        updates["ai_analysis"] = ai_analysis
-
-    if follow_up is not None:
-        updates["follow_up"] = follow_up
-
-    lead = lead_manager.update_lead(
-        lead_id,
-        **updates
-    )
-
-    if not lead:
-        return {
-            "error": "Lead not found"
-        }
-
-    return {
-        "message": "Lead updated",
-        "lead": lead
-    }
-
-
-@app.post("/leads/{lead_id}/process")
-def process_lead_endpoint(lead_id: str):
-
-    return process_lead(lead_id)
-
-
-# ============================================================
-# SALES
-# ============================================================
-
-@app.post("/sales")
-def create_sales_opportunity(
-    lead_id: str,
-    service: str = "",
-    setup_fee: float = 0,
-    monthly_fee: float = 0,
-    notes: str = ""
-):
-
-    with get_db() as db:
-
-        lead = db.execute(
-            """
-            SELECT *
-            FROM leads
-            WHERE id = ?
-            """,
-            (lead_id,)
-        ).fetchone()
-
-        if not lead:
-            return {
-                "error": "Lead not found"
-            }
-
-        opportunity_id = new_id()
-        created_at = now()
-
-        db.execute(
-            """
-            INSERT INTO sales_opportunities
-            (
-                id,
-                lead_id,
-                stage,
-                service,
-                setup_fee,
-                monthly_fee,
-                probability,
-                notes,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                opportunity_id,
-                lead_id,
-                "new",
-                service,
-                setup_fee,
-                monthly_fee,
-                10,
-                notes,
-                created_at,
-                created_at
-            )
-        )
-
-        db.execute(
-            """
-            INSERT INTO activity_log
-            (
-                entity_type,
-                entity_id,
-                action,
-                details,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                "lead",
-                lead_id,
-                "sales_opportunity_created",
-                service,
-                created_at
-            )
-        )
-
-    return {
-        "message": "Sales opportunity created",
-        "opportunity": {
-            "id": opportunity_id,
-            "lead_id": lead_id,
-            "stage": "new",
-            "service": service,
-            "setup_fee": setup_fee,
-            "monthly_fee": monthly_fee,
-            "probability": 10,
-            "notes": notes,
-            "created_at": created_at
-        }
-    }
-
-
-@app.get("/sales")
-def get_sales():
-
-    with get_db() as db:
-
-        rows = db.execute(
-            """
-            SELECT
-                sales_opportunities.*,
-                leads.name,
-                leads.phone,
-                leads.email,
-                leads.business,
-                leads.requirement
-            FROM sales_opportunities
-            LEFT JOIN leads
-                ON sales_opportunities.lead_id = leads.id
-            ORDER BY sales_opportunities.created_at DESC
-            """
-        ).fetchall()
-
-    return {
-        "sales": [dict(row) for row in rows]
-    }
-
-
-@app.patch("/sales/{opportunity_id}")
-def update_sales_stage(
-    opportunity_id: str,
-    stage: str,
-    probability: int = None,
-    notes: str = None
-):
-
-    valid_stages = [
-        "new",
-        "qualified",
-        "contacted",
-        "meeting",
-        "proposal",
-        "won",
-        "lost"
-    ]
-
-    if stage not in valid_stages:
-        return {
-            "error": "Invalid sales stage",
-            "valid_stages": valid_stages
-        }
-
-    probabilities = {
-        "new": 10,
-        "qualified": 25,
-        "contacted": 35,
-        "meeting": 50,
-        "proposal": 70,
-        "won": 100,
-        "lost": 0
-    }
-
-    with get_db() as db:
-
-        opportunity = db.execute(
-            """
-            SELECT *
-            FROM sales_opportunities
-            WHERE id = ?
-            """,
-            (opportunity_id,)
-        ).fetchone()
-
-        if not opportunity:
-            return {
-                "error": "Sales opportunity not found"
-            }
-
-        if probability is None:
-            probability = probabilities[stage]
-
-        if notes is None:
-            notes = opportunity["notes"]
-
-        updated_at = now()
-
-        db.execute(
-            """
-            UPDATE sales_opportunities
-            SET stage = ?,
-                probability = ?,
-                notes = ?,
-                updated_at = ?
-            WHERE id = ?
-            """,
-            (
-                stage,
-                probability,
-                notes,
-                updated_at,
-                opportunity_id
-            )
-        )
-
-        db.execute(
-            """
-            INSERT INTO activity_log
-            (
-                entity_type,
-                entity_id,
-                action,
-                details,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                "sales",
-                opportunity_id,
-                "stage_changed",
-                stage,
-                updated_at
-            )
-        )
-
-    return {
-        "message": "Sales opportunity updated",
-        "opportunity_id": opportunity_id,
-        "stage": stage,
-        "probability": probability
-    }
-
-
-# ============================================================
-# WON SALE
-# ============================================================
-
-@app.post("/sales/{opportunity_id}/won")
-def mark_sale_won(opportunity_id: str):
-
-    with get_db() as db:
-
-        opportunity = db.execute(
-            """
-            SELECT *
-            FROM sales_opportunities
-            WHERE id = ?
-            """,
-            (opportunity_id,)
-        ).fetchone()
-
-        if not opportunity:
-            return {
-                "error": "Sales opportunity not found"
-            }
-
-        lead = db.execute(
-            """
-            SELECT *
-            FROM leads
-            WHERE id = ?
-            """,
-            (opportunity["lead_id"],)
-        ).fetchone()
-
-        if not lead:
-            return {
-                "error": "Lead not found"
-            }
-
-        client_id = new_id()
-        created_at = now()
-
-        company_name = lead["business"] or lead["name"]
-
-        db.execute(
-            """
-            INSERT INTO clients
-            (
-                id,
-                name,
-                company,
-                status,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                client_id,
-                lead["name"],
-                company_name,
-                "active",
-                created_at
-            )
-        )
-
-        db.execute(
-            """
-            UPDATE sales_opportunities
-            SET stage = ?,
-                probability = ?,
-                updated_at = ?
-            WHERE id = ?
-            """,
-            (
-                "won",
-                100,
-                created_at,
-                opportunity_id
-            )
-        )
-
-        db.execute(
-            """
-            UPDATE leads
-            SET status = ?,
-                updated_at = ?
-            WHERE id = ?
-            """,
-            (
-                "won",
-                created_at,
-                lead["id"]
-            )
-        )
-
-        revenue_id = new_id()
-
-        db.execute(
-            """
-            INSERT INTO revenue
-            (
-                id,
-                lead_id,
-                client_id,
-                service,
-                setup_fee,
-                monthly_fee,
-                status,
-                payment_date,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                revenue_id,
-                lead["id"],
-                client_id,
-                opportunity["service"] or "AI Automation Service",
-                opportunity["setup_fee"],
-                opportunity["monthly_fee"],
-                "pending",
-                None,
-                created_at
-            )
-        )
-
-        db.execute(
-            """
-            INSERT INTO activity_log
-            (
-                entity_type,
-                entity_id,
-                action,
-                details,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                "sales",
-                opportunity_id,
-                "deal_won",
-                f"Client created: {client_id}",
-                created_at
-            )
-        )
-
-    return {
-        "message": "Deal marked as won",
-        "client_id": client_id,
-        "revenue_id": revenue_id,
-        "setup_fee": opportunity["setup_fee"],
-        "monthly_fee": opportunity["monthly_fee"],
-        "status": "payment_pending"
-    }
-
-
-# ============================================================
-# SALES DASHBOARD
-# ============================================================
-
-@app.get("/sales/dashboard")
-def sales_dashboard():
-
-    with get_db() as db:
-
-        opportunities = db.execute(
-            "SELECT * FROM sales_opportunities"
-        ).fetchall()
-
-        revenue_rows = db.execute(
-            "SELECT * FROM revenue"
-        ).fetchall()
-
-    pipeline_value = sum(
-        float(row["setup_fee"] or 0)
-        for row in opportunities
-        if row["stage"] not in ["won", "lost"]
-    )
-
-    weighted_pipeline = sum(
-        float(row["setup_fee"] or 0)
-        * (int(row["probability"] or 0) / 100)
-        for row in opportunities
-        if row["stage"] not in ["won", "lost"]
-    )
-
-    won_setup = sum(
-        float(row["setup_fee"] or 0)
-        for row in revenue_rows
-        if row["status"] in ["pending", "paid"]
-    )
-
-    monthly_recurring = sum(
-        float(row["monthly_fee"] or 0)
-        for row in revenue_rows
+    business = get_current_business(
+        request
     )
 
     return {
-        "pipeline": {
-            "open_pipeline": pipeline_value,
-            "weighted_pipeline": weighted_pipeline
-        },
-        "revenue": {
-            "won_setup_value": won_setup,
-            "monthly_recurring_revenue": monthly_recurring
-        },
-        "deals": {
-            "total": len(opportunities),
-            "won": sum(
-                1
-                for row in opportunities
-                if row["stage"] == "won"
-            ),
-            "lost": sum(
-                1
-                for row in opportunities
-                if row["stage"] == "lost"
-            )
-        }
-    }
-
-
-# ============================================================
-# PROPOSALS
-# ============================================================
-
-@app.post("/proposals")
-def create_proposal_endpoint(
-    lead_id: str,
-    client_name: str,
-    company: str,
-    service: str,
-    setup_fee: float,
-    monthly_fee: float,
-    description: str
-):
-
-    proposal = create_proposal(
-        lead_id=lead_id,
-        client_name=client_name,
-        company=company,
-        service=service,
-        setup_fee=setup_fee,
-        monthly_fee=monthly_fee,
-        description=description
-    )
-
-    return {
-        "message": "Proposal created successfully",
-        "proposal": proposal
-    }
-
-
-@app.get("/proposals")
-def get_proposals():
-
-    return {
-        "proposals": list_proposals()
-    }
-
-
-@app.get("/proposals/{proposal_id}")
-def get_single_proposal(proposal_id: str):
-
-    proposal = get_proposal(proposal_id)
-
-    if not proposal:
-        return {
-            "error": "Proposal not found"
-        }
-
-    return {
-        "proposal": proposal
-    }
-
-
-@app.patch("/proposals/{proposal_id}")
-def update_proposal_endpoint(
-    proposal_id: str,
-    status: str = None,
-    setup_fee: float = None,
-    monthly_fee: float = None,
-    description: str = None
-):
-
-    updates = {}
-
-    if status is not None:
-        updates["status"] = status
-
-    if setup_fee is not None:
-        updates["setup_fee"] = setup_fee
-
-    if monthly_fee is not None:
-        updates["monthly_fee"] = monthly_fee
-
-    if description is not None:
-        updates["description"] = description
-
-    proposal = update_proposal(
-        proposal_id,
-        **updates
-    )
-
-    if not proposal:
-        return {
-            "error": "Proposal not found"
-        }
-
-    return {
-        "message": "Proposal updated successfully",
-        "proposal": proposal
-    }
-
-
-# ============================================================
-# SEND PROPOSAL
-# ============================================================
-
-@app.post("/proposals/{proposal_id}/send")
-def send_proposal_endpoint(proposal_id: str):
-
-    proposal = proposal_send(proposal_id)
-
-    if not proposal:
-        return {
-            "error": "Proposal not found",
-            "proposal_id": proposal_id
-        }
-
-    return {
-        "message": "Proposal marked as sent",
-        "proposal": proposal
-    }
-
-
-# ============================================================
-# ACCEPT PROPOSAL
-# ============================================================
-
-@app.post("/proposals/{proposal_id}/accept")
-def accept_proposal_endpoint(proposal_id: str):
-
-    proposal = proposal_accept(proposal_id)
-
-    if not proposal:
-        return {
-            "error": "Proposal not found",
-            "proposal_id": proposal_id
-        }
-
-    return {
-        "message": "Proposal accepted",
-        "proposal": proposal
-    }
-
-
-# ============================================================
-# REJECT PROPOSAL
-# ============================================================
-
-@app.post("/proposals/{proposal_id}/reject")
-def reject_proposal_endpoint(proposal_id: str):
-
-    proposal = proposal_reject(proposal_id)
-
-    if not proposal:
-        return {
-            "error": "Proposal not found",
-            "proposal_id": proposal_id
-        }
-
-    return {
-        "message": "Proposal rejected",
-        "proposal": proposal
-    }
-
-
-# ============================================================
-# PROPOSAL FOLLOW-UP
-# ============================================================
-
-@app.post("/proposals/{proposal_id}/follow-up")
-def proposal_follow_up(proposal_id: str):
-
-    with get_db() as db:
-
-        proposal = db.execute(
-            """
-            SELECT *
-            FROM proposals
-            WHERE id = ?
-            """,
-            (proposal_id,)
-        ).fetchone()
-
-        if not proposal:
-            return {
-                "error": "Proposal not found"
-            }
-
-        if proposal["status"] not in ["sent", "follow_up"]:
-            return {
-                "error": "Proposal must be sent before follow-up"
-            }
-
-        client_name = proposal["client_name"]
-        company = proposal["company"]
-        service = proposal["service"]
-        setup_fee = proposal["setup_fee"]
-        monthly_fee = proposal["monthly_fee"]
-
-        follow_up_message = f"""
-Hi {client_name},
-
-I wanted to follow up regarding the {service}
-automation proposal for {company}.
-
-The proposed investment is:
-
-Setup: â‚¹{setup_fee:,.0f}
-Monthly: â‚¹{monthly_fee:,.0f}
-
-The goal is to automate repetitive lead-handling
-processes so your team can respond faster and
-avoid losing potential customers.
-
-If you'd like to proceed, I can prepare the
-onboarding and implementation steps.
-
-Please let me know if you'd like to move forward.
-
-Regards,
-AI Automation Team
-""".strip()
-
-        db.execute(
-            """
-            UPDATE proposals
-            SET status = ?
-            WHERE id = ?
-            """,
-            (
-                "follow_up",
-                proposal_id
-            )
+        "leads": list_leads(
+            business_id=business["id"]
         )
-
-    return {
-        "message": "Follow-up prepared successfully",
-        "proposal_id": proposal_id,
-        "status": "follow_up",
-        "follow_up": follow_up_message
     }
-
-
-# ============================================================
-# PAYMENTS
-# ============================================================
-
-@app.post("/payments")
-def create_payment(
-    proposal_id: str,
-    client_name: str,
-    company: str,
-    amount: float,
-    payment_type: str = "setup",
-    description: str = ""
-):
-
-    if amount <= 0:
-        return {
-            "error": "Payment amount must be greater than 0"
-        }
-
-    payment = payment_manager.create_payment(
-        proposal_id=proposal_id,
-        client_name=client_name,
-        company=company,
-        amount=amount,
-        payment_type=payment_type,
-        description=description
-    )
-
-    return {
-        "message": "Payment created successfully",
-        "payment": payment
-    }
-
-
-@app.get("/payments")
-def get_payments():
-
-    payments = payment_manager.list_payments()
-
-    total_revenue = sum(
-        p["amount"]
-        for p in payments
-        if p["status"] == "paid"
-    )
-
-    pending_revenue = sum(
-        p["amount"]
-        for p in payments
-        if p["status"] == "pending"
-    )
-
-    cancelled_amount = sum(
-        p["amount"]
-        for p in payments
-        if p["status"] == "cancelled"
-    )
-
-    return {
-        "payments": payments,
-        "metrics": {
-            "total_payments": len(payments),
-
-            "paid_payments": sum(
-                1
-                for p in payments
-                if p["status"] == "paid"
-            ),
-
-            "pending_payments": sum(
-                1
-                for p in payments
-                if p["status"] == "pending"
-            ),
-
-            "total_revenue": total_revenue,
-
-            "pending_revenue": pending_revenue,
-
-            "cancelled_amount": cancelled_amount
-        }
-    }
-
-
-@app.get("/payments/{payment_id}")
-def get_payment(payment_id: str):
-
-    payment = payment_manager.get_payment(payment_id)
-
-    if not payment:
-        return {
-            "error": "Payment not found"
-        }
-
-    return {
-        "payment": payment
-    }
-
-
-@app.post("/payments/{payment_id}/mark-paid")
-def mark_payment_paid(payment_id: str):
-
-    payment = payment_manager.mark_paid(payment_id)
-
-    if not payment:
-        return {
-            "error": "Payment not found"
-        }
-
-    return {
-        "message": "Payment marked as paid",
-        "payment": payment
-    }
-
-
-@app.post("/payments/{payment_id}/cancel")
-def cancel_payment(payment_id: str):
-
-    payment = payment_manager.cancel_payment(payment_id)
-
-    if not payment:
-        return {
-            "error": "Payment not found"
-        }
-
-    return {
-        "message": "Payment cancelled",
-        "payment": payment
-    }
-
-
-# ============================================================
-# REVENUE DASHBOARD
-# ============================================================
-#
-# IMPORTANT:
-# Only ONE /revenue route exists now.
-# ============================================================
-
-@app.get("/revenue")
-def revenue_dashboard():
-
-    payments = payment_manager.list_payments()
-
-    paid = [
-        p
-        for p in payments
-        if p["status"] == "paid"
-    ]
-
-    pending = [
-        p
-        for p in payments
-        if p["status"] == "pending"
-    ]
-
-    cancelled = [
-        p
-        for p in payments
-        if p["status"] == "cancelled"
-    ]
-
-    return {
-        "business_revenue": {
-
-            "total_collected": sum(
-                float(p["amount"])
-                for p in paid
-            ),
-
-            "pending_amount": sum(
-                float(p["amount"])
-                for p in pending
-            ),
-
-            "cancelled_amount": sum(
-                float(p["amount"])
-                for p in cancelled
-            ),
-
-            "paid_transactions": len(paid),
-
-            "pending_transactions": len(pending),
-
-            "cancelled_transactions": len(cancelled)
-        }
-    }
-# ===== REAL SALES AGENT =====
-try:
-    from .real_agent import run_real_agent
-except ImportError:
-    run_real_agent = None
-
-
-@app.post("/agent/run/{lead_id}")
-def run_real_agent_endpoint(lead_id: str):
-    if run_real_agent is None:
-        raise HTTPException(
-            status_code=500,
-            detail="real_agent.py could not be imported"
-        )
-
-    try:
-        return run_real_agent(lead_id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ===== CUSTOMER AI AGENT =====
-
-try:
-    from .customer_agent import customer_chat
-except ImportError:
-    customer_chat = None
-
-
-@app.post("/customer/chat")
-def customer_chat_endpoint(payload: dict):
-
-    if customer_chat is None:
-        raise HTTPException(
-            status_code=500,
-            detail="customer_agent.py could not be imported"
-        )
-
-    message = payload.get("message", "")
-    conversation = payload.get("conversation", [])
-
-    try:
-        return customer_chat(
-            message=message,
-            conversation=conversation
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
 
 
 

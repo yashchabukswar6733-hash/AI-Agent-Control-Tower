@@ -7,221 +7,137 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DATABASE_URL = "sqlite:///" + str(BASE_DIR / "saas.db")
+DATABASE_PATH = BASE_DIR / "saas.db"
+
+DATABASE_URL = (
+    "sqlite:///"
+    + str(DATABASE_PATH)
+)
+
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args={
+        "check_same_thread": False
+    }
 )
 
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine,
+    bind=engine
 )
 
 Base = declarative_base()
 
 
-# ============================================================
-# SQLALCHEMY SESSION
-# ============================================================
-
 def get_session():
+
     return SessionLocal()
 
 
-# ============================================================
-# LEGACY SQLITE COMPATIBILITY
-#
-# Existing application modules use:
-#     with get_db() as db:
-#         db.execute(...)
-#
-# Keep that interface working while we migrate modules
-# gradually to SQLAlchemy.
-# ============================================================
-
 def get_db():
+
     connection = sqlite3.connect(
-        BASE_DIR / "saas.db",
-        check_same_thread=False,
+        DATABASE_PATH,
+        check_same_thread=False
     )
 
     connection.row_factory = sqlite3.Row
 
-    try:
-        yield_or_return = connection
+    class DBContext:
 
-        class DBContext:
-            def __enter__(self):
-                return yield_or_return
+        def __enter__(self):
 
-            def __exit__(self, exc_type, exc_value, traceback):
-                if exc_type is None:
-                    yield_or_return.commit()
-                else:
-                    yield_or_return.rollback()
+            return connection
 
-                yield_or_return.close()
+        def __exit__(
+            self,
+            exc_type,
+            exc_value,
+            traceback
+        ):
 
-        return DBContext()
+            if exc_type is None:
 
-    except Exception:
-        connection.close()
-        raise
+                connection.commit()
 
+            else:
 
-# ============================================================
-# HELPERS USED BY EXISTING APPLICATION
-# ============================================================
+                connection.rollback()
+
+            connection.close()
+
+    return DBContext()
+
 
 def new_id():
+
     return uuid.uuid4().hex[:8]
 
 
 def now():
+
     return datetime.utcnow().isoformat()
 
-
-# ============================================================
-# EXISTING DATABASE SCHEMA
-#
-# This preserves the tables already used by main.py.
-# ============================================================
 
 def init_db():
 
     db = sqlite3.connect(
-        BASE_DIR / "saas.db",
-        check_same_thread=False,
+        DATABASE_PATH,
+        check_same_thread=False
     )
 
     db.row_factory = sqlite3.Row
 
-    cursor = db.cursor()
-
-    cursor.executescript(
+    db.executescript(
         """
-        CREATE TABLE IF NOT EXISTS clients (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            company TEXT NOT NULL,
-            status TEXT DEFAULT 'active',
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS agents (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            role TEXT NOT NULL,
-            status TEXT DEFAULT 'active',
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS tasks (
-            id TEXT PRIMARY KEY,
-            agent TEXT NOT NULL,
-            description TEXT NOT NULL,
-            status TEXT DEFAULT 'pending',
-            result TEXT,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS workflows (
+        CREATE TABLE IF NOT EXISTS client_onboarding
+        (
             id TEXT PRIMARY KEY,
             client_id TEXT NOT NULL,
-            goal TEXT NOT NULL,
-            status TEXT DEFAULT 'pending',
-            result TEXT,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS workflow_steps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            workflow_id TEXT NOT NULL,
-            name TEXT NOT NULL,
-            status TEXT DEFAULT 'pending',
-            result TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS leads (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            email TEXT DEFAULT '',
-            business TEXT DEFAULT '',
-            requirement TEXT DEFAULT '',
-            status TEXT DEFAULT 'new',
-            score INTEGER DEFAULT 0,
-            ai_analysis TEXT DEFAULT '',
-            follow_up TEXT DEFAULT '',
+            business_id TEXT NOT NULL,
+            payment_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'started',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS sales_opportunities (
+        CREATE TABLE IF NOT EXISTS client_delivery_tasks
+        (
             id TEXT PRIMARY KEY,
-            lead_id TEXT NOT NULL,
-            stage TEXT DEFAULT 'new',
-            service TEXT DEFAULT '',
-            setup_fee REAL DEFAULT 0,
-            monthly_fee REAL DEFAULT 0,
-            probability INTEGER DEFAULT 10,
-            notes TEXT DEFAULT '',
+            client_id TEXT NOT NULL,
+            business_id TEXT NOT NULL,
+            onboarding_id TEXT NOT NULL,
+            task_name TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS activity_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            entity_type TEXT NOT NULL,
-            entity_id TEXT NOT NULL,
-            action TEXT NOT NULL,
-            details TEXT DEFAULT '',
-            created_at TEXT NOT NULL
-        );
+        CREATE INDEX IF NOT EXISTS
+        idx_onboarding_business
+        ON client_onboarding(business_id);
 
-        CREATE TABLE IF NOT EXISTS revenue (
-            id TEXT PRIMARY KEY,
-            lead_id TEXT,
-            client_id TEXT,
-            service TEXT,
-            setup_fee REAL DEFAULT 0,
-            monthly_fee REAL DEFAULT 0,
-            status TEXT DEFAULT 'pending',
-            payment_date TEXT,
-            created_at TEXT NOT NULL
-        );
+        CREATE INDEX IF NOT EXISTS
+        idx_delivery_client
+        ON client_delivery_tasks(client_id);
 
-        CREATE TABLE IF NOT EXISTS proposals (
-            id TEXT PRIMARY KEY,
-            lead_id TEXT,
-            client_name TEXT NOT NULL,
-            company TEXT NOT NULL,
-            service TEXT NOT NULL,
-            setup_fee REAL DEFAULT 0,
-            monthly_fee REAL DEFAULT 0,
-            description TEXT DEFAULT '',
-            status TEXT DEFAULT 'draft',
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        );
+        CREATE INDEX IF NOT EXISTS
+        idx_delivery_business
+        ON client_delivery_tasks(business_id);
+
+        CREATE INDEX IF NOT EXISTS
+        idx_payments_razorpay_order
+        ON payments(razorpay_order_id);
         """
     )
 
     db.commit()
     db.close()
 
-
-# ============================================================
-# INITIALIZE DATABASE
-# ============================================================
 
 init_db()

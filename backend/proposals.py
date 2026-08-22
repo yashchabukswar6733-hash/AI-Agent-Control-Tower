@@ -12,7 +12,8 @@ def create_proposal(
     service,
     setup_fee,
     monthly_fee,
-    description
+    description,
+    business_id
 ):
 
     proposal_id = new_id()
@@ -32,9 +33,11 @@ def create_proposal(
                 monthly_fee,
                 description,
                 status,
-                created_at
+                created_at,
+                updated_at,
+                business_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 proposal_id,
@@ -46,18 +49,20 @@ def create_proposal(
                 float(monthly_fee),
                 description,
                 "draft",
-                created_at
+                created_at,
+                created_at,
+                business_id
             )
         )
 
-    return get_proposal(proposal_id)
+    return get_proposal(proposal_id, business_id)
 
 
 # ============================================================
 # GET PROPOSAL
 # ============================================================
 
-def get_proposal(proposal_id):
+def get_proposal(proposal_id, business_id):
 
     with get_db() as db:
 
@@ -66,8 +71,12 @@ def get_proposal(proposal_id):
             SELECT *
             FROM proposals
             WHERE id = ?
+              AND business_id = ?
             """,
-            (proposal_id,)
+            (
+                proposal_id,
+                business_id
+            )
         ).fetchone()
 
     if not row:
@@ -80,7 +89,7 @@ def get_proposal(proposal_id):
 # LIST PROPOSALS
 # ============================================================
 
-def list_proposals():
+def list_proposals(business_id):
 
     with get_db() as db:
 
@@ -88,14 +97,13 @@ def list_proposals():
             """
             SELECT *
             FROM proposals
+            WHERE business_id = ?
             ORDER BY created_at DESC
-            """
+            """,
+            (business_id,)
         ).fetchall()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]
 
 
 # ============================================================
@@ -104,6 +112,7 @@ def list_proposals():
 
 def update_proposal(
     proposal_id,
+    business_id,
     **updates
 ):
 
@@ -122,7 +131,10 @@ def update_proposal(
             clean_updates[key] = value
 
     if not clean_updates:
-        return get_proposal(proposal_id)
+        return get_proposal(
+            proposal_id,
+            business_id
+        )
 
     with get_db() as db:
 
@@ -131,8 +143,12 @@ def update_proposal(
             SELECT id
             FROM proposals
             WHERE id = ?
+              AND business_id = ?
             """,
-            (proposal_id,)
+            (
+                proposal_id,
+                business_id
+            )
         ).fetchone()
 
         if not existing:
@@ -149,12 +165,19 @@ def update_proposal(
 
             values.append(value)
 
-        values.append(proposal_id)
+        fields.append("updated_at = ?")
+        values.append(now())
+
+        values.extend([
+            proposal_id,
+            business_id
+        ])
 
         query = f"""
             UPDATE proposals
             SET {", ".join(fields)}
             WHERE id = ?
+              AND business_id = ?
         """
 
         db.execute(
@@ -162,17 +185,24 @@ def update_proposal(
             values
         )
 
-    return get_proposal(proposal_id)
+    return get_proposal(
+        proposal_id,
+        business_id
+    )
 
 
 # ============================================================
 # MARK PROPOSAL AS SENT
 # ============================================================
 
-def send_proposal(proposal_id):
+def send_proposal(
+    proposal_id,
+    business_id
+):
 
     return update_proposal(
         proposal_id,
+        business_id,
         status="sent"
     )
 
@@ -181,10 +211,14 @@ def send_proposal(proposal_id):
 # MARK PROPOSAL AS ACCEPTED
 # ============================================================
 
-def accept_proposal(proposal_id):
+def accept_proposal(
+    proposal_id,
+    business_id
+):
 
     return update_proposal(
         proposal_id,
+        business_id,
         status="accepted"
     )
 
@@ -193,9 +227,13 @@ def accept_proposal(proposal_id):
 # MARK PROPOSAL AS REJECTED
 # ============================================================
 
-def reject_proposal(proposal_id):
+def reject_proposal(
+    proposal_id,
+    business_id
+):
 
     return update_proposal(
         proposal_id,
+        business_id,
         status="rejected"
     )

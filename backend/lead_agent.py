@@ -95,36 +95,29 @@ def analyze_with_gemini(lead):
         )
 
     prompt = f"""
-You are an AI sales qualification agent for AutoPilot AI.
+You are the AI sales qualification agent for AutoPilot AI.
 
-AutoPilot AI sells business automation services.
+A customer contacted a business through WhatsApp.
 
-STARTER:
-Rs 4,999 one-time
-1 automation workflow
-Basic AI lead handling
-Basic integration
+Analyze the customer message and determine the best sales response.
 
-GROWTH:
-Rs 14,999 one-time
-Multiple AI workflows
-Lead automation
-WhatsApp integration
-Ongoing optimization
+Business:
+{lead.get("business", "")}
 
-Analyze this business lead.
+Customer:
+{lead.get("name", "")}
 
-Name: {lead.get("name", "")}
-Phone: {lead.get("phone", "")}
-Email: {lead.get("email", "")}
-Business: {lead.get("business", "")}
-Requirement: {lead.get("requirement", "")}
+Phone:
+{lead.get("phone", "")}
+
+Customer requirement/message:
+{lead.get("requirement", "")}
 
 Return ONLY valid JSON:
 
 {{
     "score": 0,
-    "temperature": "HOT",
+    "temperature": "COLD",
     "business_problem": "",
     "recommended_package": "STARTER",
     "reason": "",
@@ -137,25 +130,23 @@ Rules:
 
 score must be 0-100.
 
-HOT = clear problem and strong buying potential.
-WARM = real problem but uncertain buying intent.
+HOT = strong buying intent or urgent business problem.
+WARM = genuine business problem but uncertain buying intent.
 COLD = unclear requirement or weak buying intent.
 
 recommended_package must be STARTER or GROWTH.
 
-sales_reply must be a short professional WhatsApp-style reply.
+sales_reply must be a short professional WhatsApp reply.
 
-Do not claim that work has already been completed.
+The reply must:
+- answer the customer naturally
+- not claim something has already been completed
+- not make false promises
+- not pressure the customer
+- encourage the customer to explain their requirement
+- be concise
 
-Do not make false promises.
-
-Do not pressure the customer.
-
-next_action must tell the salesperson what to do next.
-
-follow_up must contain a practical follow-up instruction.
-
-Keep the response concise.
+Do not mention that you are an AI unless necessary.
 """
 
     response = client.models.generate_content(
@@ -163,20 +154,14 @@ Keep the response concise.
         contents=prompt
     )
 
-    raw = response.text
-
     data = json.loads(
-        clean_json(raw)
+        clean_json(response.text)
     )
 
     return normalize_ai_result(data)
 
 
 def analyze_lead_with_ai(lead):
-
-    # =====================================================
-    # 1. PRIMARY AI — GEMINI
-    # =====================================================
 
     try:
 
@@ -195,15 +180,7 @@ def analyze_lead_with_ai(lead):
             str(gemini_error)
         )
 
-    # =====================================================
-    # 2. BACKUP AI — OPENROUTER FREE
-    # =====================================================
-
     try:
-
-        print(
-            "AI Agent: Gemini unavailable."
-        )
 
         print(
             "AI Agent: Trying OpenRouter backup..."
@@ -211,13 +188,7 @@ def analyze_lead_with_ai(lead):
 
         result = analyze_with_openrouter(lead)
 
-        result = normalize_ai_result(result)
-
-        print(
-            "AI Agent: OpenRouter succeeded."
-        )
-
-        return result
+        return normalize_ai_result(result)
 
     except Exception as openrouter_error:
 
@@ -226,33 +197,26 @@ def analyze_lead_with_ai(lead):
             str(openrouter_error)
         )
 
-    # =====================================================
-    # 3. FINAL FALLBACK — LOCAL AGENT
-    # =====================================================
-
-    print(
-        "AI Agent: Both AI providers unavailable."
-    )
-
     print(
         "AI Agent: Using local fallback."
     )
 
-    result = fallback_analysis(lead)
-
-    result = normalize_ai_result(result)
-
-    return result
+    return normalize_ai_result(
+        fallback_analysis(lead)
+    )
 
 
-def process_lead(lead_id):
+def process_lead(
+    business_id,
+    lead_id
+):
 
     lead = lead_manager.get_lead(
+        business_id,
         lead_id
     )
 
     if not lead:
-
         raise ValueError(
             f"Lead {lead_id} not found"
         )
@@ -268,27 +232,22 @@ def process_lead(lead_id):
     analysis = json.dumps(
         {
             "temperature": ai["temperature"],
-
             "business_problem": ai.get(
                 "business_problem",
                 ""
             ),
-
             "recommended_package": ai.get(
                 "recommended_package",
                 "STARTER"
             ),
-
             "reason": ai.get(
                 "reason",
                 ""
             ),
-
             "sales_reply": ai.get(
                 "sales_reply",
                 ""
             ),
-
             "next_action": ai.get(
                 "next_action",
                 ""
@@ -303,6 +262,79 @@ def process_lead(lead_id):
     )
 
     updated = lead_manager.update_lead(
+        business_id=business_id,
+        lead_id=lead_id,
+        status="qualified",
+        score=ai["score"],
+        ai_analysis=analysis,
+        follow_up=follow_up
+    )
+
+    return {
+        "lead": updated,
+        "ai": ai
+    }
+# ============================================================
+# PROCESS LEAD
+# ============================================================
+
+def process_lead(
+    lead_id,
+    business_id
+):
+
+    lead = lead_manager.get_lead(
+        business_id,
+        lead_id
+    )
+
+    if not lead:
+        raise ValueError(
+            f"Lead {lead_id} not found"
+        )
+
+    print(
+        f"AI Agent: Processing lead {lead_id}"
+    )
+
+    ai = analyze_lead_with_ai(
+        lead
+    )
+
+    analysis = json.dumps(
+        {
+            "temperature": ai["temperature"],
+            "business_problem": ai.get(
+                "business_problem",
+                ""
+            ),
+            "recommended_package": ai.get(
+                "recommended_package",
+                "STARTER"
+            ),
+            "reason": ai.get(
+                "reason",
+                ""
+            ),
+            "sales_reply": ai.get(
+                "sales_reply",
+                ""
+            ),
+            "next_action": ai.get(
+                "next_action",
+                ""
+            )
+        },
+        ensure_ascii=False
+    )
+
+    follow_up = ai.get(
+        "follow_up",
+        ""
+    )
+
+    updated = lead_manager.update_lead(
+        business_id=business_id,
         lead_id=lead_id,
         status="qualified",
         score=ai["score"],
