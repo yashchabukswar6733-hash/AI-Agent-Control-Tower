@@ -1,0 +1,287 @@
+﻿<!-- ===== AUTOPILOT AI CUSTOMER AGENT ===== -->
+
+<style>
+#ai-agent-button{
+    position:fixed;
+    right:25px;
+    bottom:25px;
+    width:62px;
+    height:62px;
+    border-radius:50%;
+    border:0;
+    background:#111827;
+    color:white;
+    font-size:26px;
+    cursor:pointer;
+    box-shadow:0 10px 35px rgba(0,0,0,.25);
+    z-index:99999;
+}
+
+#ai-agent-box{
+    display:none;
+    position:fixed;
+    right:25px;
+    bottom:100px;
+    width:380px;
+    max-width:calc(100vw - 30px);
+    height:560px;
+    background:white;
+    border-radius:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    overflow:hidden;
+    z-index:99999;
+    font-family:Arial,sans-serif;
+}
+
+.ai-header{
+    background:#111827;
+    color:white;
+    padding:18px;
+}
+
+.ai-header strong{
+    display:block;
+    font-size:17px;
+}
+
+.ai-header span{
+    font-size:12px;
+    opacity:.75;
+}
+
+#ai-messages{
+    height:390px;
+    overflow-y:auto;
+    padding:15px;
+    background:#f8fafc;
+}
+
+.ai-msg{
+    max-width:85%;
+    padding:11px 13px;
+    margin:8px 0;
+    border-radius:14px;
+    line-height:1.45;
+    font-size:14px;
+    white-space:pre-wrap;
+}
+
+.ai-bot{
+    background:#e5e7eb;
+    color:#111827;
+}
+
+.ai-user{
+    background:#111827;
+    color:white;
+    margin-left:auto;
+}
+
+.ai-input-area{
+    display:flex;
+    gap:8px;
+    padding:12px;
+    border-top:1px solid #e5e7eb;
+}
+
+#ai-input{
+    flex:1;
+    border:1px solid #d1d5db;
+    border-radius:12px;
+    padding:12px;
+    outline:none;
+}
+
+#ai-send{
+    border:0;
+    border-radius:12px;
+    background:#111827;
+    color:white;
+    padding:0 16px;
+    cursor:pointer;
+}
+
+.ai-typing{
+    opacity:.6;
+    font-style:italic;
+}
+
+@media(max-width:500px){
+    #ai-agent-box{
+        right:10px;
+        bottom:90px;
+        width:calc(100vw - 20px);
+        height:calc(100vh - 120px);
+    }
+
+    #ai-messages{
+        height:calc(100vh - 235px);
+    }
+}
+</style>
+
+<button id="ai-agent-button">✦</button>
+
+<div id="ai-agent-box">
+
+    <div class="ai-header">
+        <strong>AutoPilot AI Assistant</strong>
+        <span>AI-powered business automation advisor</span>
+    </div>
+
+    <div id="ai-messages">
+        <div class="ai-msg ai-bot">
+Hi! 👋 I'm the AutoPilot AI assistant.
+
+Tell me what you want to automate in your business and I'll help you find the right solution.
+        </div>
+    </div>
+
+    <div class="ai-input-area">
+        <input
+            id="ai-input"
+            type="text"
+            placeholder="Ask about automation..."
+            autocomplete="off"
+        >
+        <button id="ai-send">Send</button>
+    </div>
+
+</div>
+
+<script>
+(function(){
+
+    const button = document.getElementById("ai-agent-button");
+    const box = document.getElementById("ai-agent-box");
+    const input = document.getElementById("ai-input");
+    const send = document.getElementById("ai-send");
+    const messages = document.getElementById("ai-messages");
+
+    let conversation = [];
+
+    button.onclick = function(){
+        box.style.display =
+            box.style.display === "block" ? "none" : "block";
+
+        if(box.style.display === "block"){
+            input.focus();
+        }
+    };
+
+    function addMessage(text, type){
+
+        const div = document.createElement("div");
+
+        div.className =
+            "ai-msg " +
+            (type === "user" ? "ai-user" : "ai-bot");
+
+        div.textContent = text;
+
+        messages.appendChild(div);
+
+        messages.scrollTop = messages.scrollHeight;
+
+        return div;
+    }
+
+    async function sendMessage(){
+
+        const message = input.value.trim();
+
+        if(!message) return;
+
+        input.value = "";
+
+        addMessage(message, "user");
+
+        conversation.push({
+            role:"user",
+            content:message
+        });
+
+        const typing = addMessage(
+            "AI is thinking...",
+            "bot"
+        );
+
+        typing.classList.add("ai-typing");
+
+        send.disabled = true;
+        input.disabled = true;
+
+        try{
+
+            const response = await fetch(
+                "/customer/chat",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({
+                        message:message,
+                        conversation:conversation
+                    })
+                }
+            );
+
+            if(!response.ok){
+                throw new Error(
+                    "Server returned " + response.status
+                );
+            }
+
+            const data = await response.json();
+
+            typing.remove();
+
+            const reply =
+                data.reply ||
+                "Sorry, I couldn't process that request.";
+
+            addMessage(reply, "bot");
+
+            conversation.push({
+                role:"assistant",
+                content:reply
+            });
+
+        }catch(error){
+
+            console.error(error);
+
+            typing.remove();
+
+            addMessage(
+                "I'm temporarily unable to connect to the AI assistant. Please try again.",
+                "bot"
+            );
+
+        }finally{
+
+            send.disabled = false;
+            input.disabled = false;
+            input.focus();
+
+        }
+    }
+
+    send.onclick = sendMessage;
+
+    input.addEventListener(
+        "keydown",
+        function(event){
+
+            if(event.key === "Enter"){
+                sendMessage();
+            }
+
+        }
+    );
+
+})();
+</script>
+
+<!-- ===== END AUTOPILOT AI CUSTOMER AGENT ===== -->

@@ -1,0 +1,426 @@
+﻿========== EXECUTOR.PY ==========
+from backend.tasks import task_manager
+from agents.manager import agent_manager
+
+
+class TaskExecutor:
+
+    def execute(self, task_id):
+        task = task_manager.get_task(task_id)
+
+        if not task:
+            return {
+                "error": "Task not found"
+            }
+
+        agent_name = task["agent"]
+
+        if not agent_manager.get_agent(agent_name):
+            return {
+                "error": "Agent not found"
+            }
+
+        # Mark task as running
+        task_manager.update_status(task_id, "running")
+        agent_manager.set_status(agent_name, "working")
+
+        # Temporary execution result
+        result = (
+            f"Agent '{agent_name}' processed the task: "
+            f"{task['description']}"
+        )
+
+        # Store result
+        task["result"] = result
+        task_manager.update_status(task_id, "completed")
+        agent_manager.set_status(agent_name, "idle")
+
+        return task
+
+
+task_executor = TaskExecutor()
+========== WORKFLOW_MANAGER.PY ==========
+from datetime import datetime
+import uuid
+
+
+class WorkflowManager:
+
+    def __init__(self):
+        self.workflows = {}
+
+    def create_workflow(self, client_id, goal):
+
+        workflow_id = uuid.uuid4().hex[:8]
+
+        workflow = {
+            "id": workflow_id,
+            "client_id": client_id,
+            "goal": goal,
+            "status": "pending",
+            "steps": [
+                {
+                    "name": "research",
+                    "status": "pending",
+                    "result": None
+                },
+                {
+                    "name": "analysis",
+                    "status": "pending",
+                    "result": None
+                },
+                {
+                    "name": "report",
+                    "status": "pending",
+                    "result": None
+                }
+            ],
+            "result": None,
+            "created_at": datetime.now().isoformat()
+        }
+
+        self.workflows[workflow_id] = workflow
+
+        return workflow
+
+    def list_workflows(self):
+        return list(self.workflows.values())
+
+    def get_workflow(self, workflow_id):
+        return self.workflows.get(workflow_id)
+
+    def update_workflow_status(
+        self,
+        workflow_id,
+        status
+    ):
+
+        workflow = self.workflows.get(
+            workflow_id
+        )
+
+        if not workflow:
+            return False
+
+        workflow["status"] = status
+
+        return True
+
+    def update_step(
+        self,
+        workflow_id,
+        step_name,
+        status,
+        result=None
+    ):
+
+        workflow = self.workflows.get(
+            workflow_id
+        )
+
+        if not workflow:
+            return False
+
+        for step in workflow["steps"]:
+
+            if step["name"] == step_name:
+
+                step["status"] = status
+                step["result"] = result
+
+                return True
+
+        return False
+
+
+workflow_manager = WorkflowManager()
+========== TASKS.PY ==========
+from datetime import datetime
+import uuid
+
+
+class TaskManager:
+
+    def __init__(self):
+        self.tasks = {}
+
+    def create_task(
+        self,
+        agent_name,
+        description,
+        client_id=None
+    ):
+        task_id = uuid.uuid4().hex[:8]
+
+        task = {
+            "id": task_id,
+            "client_id": client_id,
+            "agent": agent_name,
+            "description": description,
+            "status": "pending",
+            "result": None,
+            "created_at": datetime.now().isoformat()
+        }
+
+        self.tasks[task_id] = task
+
+        return task
+
+    def list_tasks(self):
+        return list(self.tasks.values())
+
+    def get_task(self, task_id):
+        return self.tasks.get(task_id)
+
+    def update_status(self, task_id, status):
+
+        if task_id not in self.tasks:
+            return False
+
+        self.tasks[task_id]["status"] = status
+
+        return True
+
+
+task_manager = TaskManager()
+========== LEADS.PY ==========
+import uuid
+
+from .database import get_db, now
+
+
+class LeadManager:
+
+    def create_lead(
+        self,
+        name,
+        phone,
+        email="",
+        business="",
+        requirement=""
+    ):
+        lead_id = uuid.uuid4().hex[:8]
+        created_at = now()
+
+        with get_db() as db:
+
+            columns = {
+                row["name"]
+                for row in db.execute(
+                    "PRAGMA table_info(leads)"
+                ).fetchall()
+            }
+
+            if "updated_at" in columns:
+
+                db.execute(
+                    """
+                    INSERT INTO leads
+                    (
+                        id,
+                        name,
+                        phone,
+                        email,
+                        business,
+                        requirement,
+                        status,
+                        score,
+                        ai_analysis,
+                        follow_up,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        lead_id,
+                        name,
+                        phone,
+                        email,
+                        business,
+                        requirement,
+                        "new",
+                        None,
+                        None,
+                        None,
+                        created_at,
+                        created_at
+                    )
+                )
+
+            else:
+
+                db.execute(
+                    """
+                    INSERT INTO leads
+                    (
+                        id,
+                        name,
+                        phone,
+                        email,
+                        business,
+                        requirement,
+                        status,
+                        score,
+                        ai_analysis,
+                        follow_up,
+                        created_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        lead_id,
+                        name,
+                        phone,
+                        email,
+                        business,
+                        requirement,
+                        "new",
+                        None,
+                        None,
+                        None,
+                        created_at
+                    )
+                )
+
+        return self.get_lead(lead_id)
+
+
+    def get_lead(self, lead_id):
+
+        with get_db() as db:
+
+            row = db.execute(
+                """
+                SELECT *
+                FROM leads
+                WHERE id = ?
+                """,
+                (lead_id,)
+            ).fetchone()
+
+        if not row:
+            return None
+
+        return dict(row)
+
+
+    def list_leads(self):
+
+        with get_db() as db:
+
+            rows = db.execute(
+                """
+                SELECT *
+                FROM leads
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+
+    def update_lead(
+        self,
+        lead_id,
+        status=None,
+        score=None,
+        ai_analysis=None,
+        follow_up=None
+    ):
+
+        lead = self.get_lead(lead_id)
+
+        if not lead:
+            return None
+
+        with get_db() as db:
+
+            columns = {
+                row["name"]
+                for row in db.execute(
+                    "PRAGMA table_info(leads)"
+                ).fetchall()
+            }
+
+            updates = []
+            values = []
+
+            if status is not None:
+                updates.append("status = ?")
+                values.append(status)
+
+            if score is not None:
+                updates.append("score = ?")
+                values.append(score)
+
+            if ai_analysis is not None:
+                updates.append("ai_analysis = ?")
+                values.append(ai_analysis)
+
+            if follow_up is not None:
+                updates.append("follow_up = ?")
+                values.append(follow_up)
+
+            if "updated_at" in columns:
+                updates.append("updated_at = ?")
+                values.append(now())
+
+            if not updates:
+                return self.get_lead(lead_id)
+
+            values.append(lead_id)
+
+            db.execute(
+                f"""
+                UPDATE leads
+                SET {", ".join(updates)}
+                WHERE id = ?
+                """,
+                tuple(values)
+            )
+
+        return self.get_lead(lead_id)
+
+
+lead_manager = LeadManager()
+========== CLIENTS.PY ==========
+from datetime import datetime
+import uuid
+
+
+class ClientManager:
+
+    def __init__(self):
+        self.clients = {}
+
+    def create_client(self, name, company):
+        client_id = uuid.uuid4().hex[:8]
+
+        client = {
+            "id": client_id,
+            "name": name,
+            "company": company,
+            "status": "active",
+            "created_at": datetime.now().isoformat()
+        }
+
+        self.clients[client_id] = client
+
+        return client
+
+    def list_clients(self):
+        return list(self.clients.values())
+
+    def get_client(self, client_id):
+        return self.clients.get(client_id)
+
+    def delete_client(self, client_id):
+        if client_id not in self.clients:
+            return False
+
+        del self.clients[client_id]
+        return True
+
+
+client_manager = ClientManager()

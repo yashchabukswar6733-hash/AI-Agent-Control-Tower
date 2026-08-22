@@ -1,16 +1,21 @@
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AutoPilot AI | AI Automation for Modern Businesses</title>
+<title>AutoPilot AI | AI Automation for Businesses</title>
 
 <style>
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
 }
 
 body{
@@ -26,12 +31,15 @@ body{
 }
 
 header{
-    padding:25px 0;
-    background:white;
+    background:#fff;
     border-bottom:1px solid #e5e7eb;
+    position:sticky;
+    top:0;
+    z-index:100;
 }
 
 .nav{
+    min-height:75px;
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -42,34 +50,8 @@ header{
     font-weight:800;
 }
 
-.hero{
-    text-align:center;
-    padding:90px 20px 70px;
-    background:linear-gradient(135deg,#eef4ff,#ffffff);
-}
-
-.hero h1{
-    font-size:clamp(38px,6vw,64px);
-    line-height:1.1;
-    margin-bottom:20px;
-}
-
-.hero h1 span{
+.logo span{
     color:#2563eb;
-}
-
-.hero p{
-    max-width:750px;
-    margin:0 auto 30px;
-    font-size:18px;
-    color:#4b5563;
-}
-
-.buttons{
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    flex-wrap:wrap;
 }
 
 .btn{
@@ -78,17 +60,54 @@ header{
     border-radius:10px;
     text-decoration:none;
     font-weight:700;
+    border:none;
+    cursor:pointer;
 }
 
 .btn-primary{
     background:#2563eb;
-    color:white;
+    color:#fff;
+}
+
+.btn-primary:hover{
+    background:#1d4ed8;
 }
 
 .btn-secondary{
-    background:white;
+    background:#fff;
     color:#111827;
     border:1px solid #d1d5db;
+}
+
+.hero{
+    padding:100px 20px 80px;
+    text-align:center;
+    background:linear-gradient(135deg,#eef4ff,#fff);
+}
+
+.hero h1{
+    max-width:850px;
+    margin:auto;
+    font-size:clamp(40px,7vw,68px);
+    line-height:1.05;
+}
+
+.hero h1 span{
+    color:#2563eb;
+}
+
+.hero p{
+    max-width:720px;
+    margin:25px auto 30px;
+    color:#4b5563;
+    font-size:18px;
+}
+
+.buttons{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
 }
 
 .stats{
@@ -99,21 +118,21 @@ header{
 }
 
 .stat{
-    text-align:center;
-    background:white;
+    background:#fff;
     padding:25px;
-    border-radius:15px;
+    text-align:center;
     border:1px solid #e5e7eb;
+    border-radius:15px;
 }
 
 .stat strong{
     display:block;
-    font-size:30px;
+    font-size:32px;
     color:#2563eb;
 }
 
 section{
-    padding:70px 0;
+    padding:75px 0;
 }
 
 .section-title{
@@ -137,7 +156,7 @@ section{
 }
 
 .service{
-    background:white;
+    background:#fff;
     padding:30px;
     border-radius:18px;
     border:1px solid #e5e7eb;
@@ -145,7 +164,7 @@ section{
 }
 
 .service:hover{
-    transform:translateY(-4px);
+    transform:translateY(-5px);
     box-shadow:0 15px 35px rgba(0,0,0,.08);
 }
 
@@ -158,8 +177,7 @@ section{
     background:#eff6ff;
     color:#2563eb;
     border-radius:12px;
-    font-size:15px;
-    font-weight:bold;
+    font-weight:800;
     margin-bottom:18px;
 }
 
@@ -183,17 +201,17 @@ section{
 }
 
 .number{
-    width:50px;
-    height:50px;
+    width:52px;
+    height:52px;
     margin:0 auto 15px;
     border-radius:50%;
     background:#2563eb;
-    color:white;
+    color:#fff;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-weight:bold;
     font-size:20px;
+    font-weight:800;
 }
 
 .pricing{
@@ -205,14 +223,29 @@ section{
 }
 
 .price-card{
-    background:white;
+    background:#fff;
     border:1px solid #e5e7eb;
     border-radius:18px;
     padding:35px;
 }
 
+.price-card.featured{
+    border:2px solid #2563eb;
+}
+
+.badge{
+    display:inline-block;
+    background:#eff6ff;
+    color:#2563eb;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
 .price{
-    font-size:35px;
+    font-size:36px;
     font-weight:800;
     margin:15px 0;
 }
@@ -227,12 +260,12 @@ section{
 }
 
 .audit{
-    background:#111827;
-    color:white;
-    border-radius:25px;
-    padding:50px;
     max-width:800px;
     margin:auto;
+    padding:45px;
+    border-radius:25px;
+    background:#111827;
+    color:#fff;
 }
 
 .audit h2{
@@ -266,14 +299,7 @@ textarea{
 }
 
 button{
-    border:none;
-    cursor:pointer;
-    padding:15px;
-    border-radius:9px;
-    background:#2563eb;
-    color:white;
-    font-size:16px;
-    font-weight:700;
+    width:100%;
 }
 
 button:disabled{
@@ -282,8 +308,8 @@ button:disabled{
 }
 
 #message{
-    margin-top:15px;
-    font-weight:600;
+    margin-top:18px;
+    font-weight:700;
 }
 
 .success{
@@ -292,6 +318,10 @@ button:disabled{
 
 .error{
     color:#f87171;
+}
+
+.loading{
+    color:#93c5fd;
 }
 
 footer{
@@ -310,7 +340,7 @@ footer{
     }
 
     .hero{
-        padding-top:60px;
+        padding-top:65px;
     }
 
     .audit{
@@ -318,36 +348,177 @@ footer{
     }
 
     .nav{
-        gap:15px;
+        gap:10px;
     }
 
-    .logo{
-        font-size:20px;
+    .nav .btn{
+        padding:10px 14px;
+        font-size:14px;
     }
 }
+</style>
+<style id="autopilot-chat-size-fix">
+
+#ai-agent-box {
+    position: fixed !important;
+    right: 24px !important;
+    bottom: 100px !important;
+
+    width: 560px !important;
+    max-width: calc(100vw - 32px) !important;
+
+    height: 700px !important;
+    max-height: calc(100vh - 130px) !important;
+
+    background: #ffffff !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+
+    box-shadow: 0 25px 80px rgba(0,0,0,.25) !important;
+
+    z-index: 99999 !important;
+}
+
+#ai-messages {
+    height: calc(100% - 145px) !important;
+    min-height: 0 !important;
+
+    overflow-y: auto !important;
+
+    padding: 20px !important;
+    box-sizing: border-box !important;
+
+    background: #f8fafc !important;
+}
+
+.ai-input-area {
+    display: flex !important;
+    align-items: center !important;
+
+    width: 100% !important;
+    box-sizing: border-box !important;
+
+    gap: 12px !important;
+    padding: 16px !important;
+
+    min-height: 80px !important;
+
+    background: #ffffff !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+#ai-input {
+    display: block !important;
+
+    flex: 1 1 auto !important;
+
+    width: auto !important;
+    min-width: 0 !important;
+
+    height: 50px !important;
+
+    box-sizing: border-box !important;
+
+    padding: 0 17px !important;
+
+    border: 1px solid #d1d5db !important;
+    border-radius: 15px !important;
+
+    background: #ffffff !important;
+    color: #111827 !important;
+
+    font-size: 16px !important;
+
+    outline: none !important;
+
+    pointer-events: auto !important;
+}
+
+#ai-input:focus {
+    border-color: #111827 !important;
+
+    box-shadow:
+        0 0 0 3px rgba(17,24,39,.08) !important;
+}
+
+#ai-send {
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 95px !important;
+
+    width: 95px !important;
+    height: 50px !important;
+
+    border: 0 !important;
+    border-radius: 15px !important;
+
+    background: #111827 !important;
+    color: white !important;
+
+    font-size: 15px !important;
+    font-weight: 600 !important;
+
+    cursor: pointer !important;
+
+    pointer-events: auto !important;
+}
+
+#ai-send:hover {
+    opacity: .9 !important;
+}
+
+#ai-agent-button {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+@media (max-width: 650px) {
+
+    #ai-agent-box {
+        right: 12px !important;
+        bottom: 90px !important;
+
+        width: calc(100vw - 24px) !important;
+        max-width: none !important;
+
+        height: calc(100vh - 110px) !important;
+        max-height: none !important;
+
+        border-radius: 18px !important;
+    }
+
+    #ai-input {
+        font-size: 15px !important;
+    }
+
+    #ai-send {
+        flex: 0 0 78px !important;
+        width: 78px !important;
+    }
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
-
 <div class="container nav">
 
 <div class="logo">
-AutoPilot AI
+AutoPilot <span>AI</span>
 </div>
 
 <a href="#audit" class="btn btn-primary">
-Get Free Audit
+Free Audit
 </a>
 
 </div>
-
 </header>
 
-
-<!-- HERO -->
 
 <section class="hero">
 
@@ -359,14 +530,14 @@ Turn Your Business Into An
 </h1>
 
 <p>
-We automate repetitive work, capture more leads and help businesses
-operate faster using intelligent AI agents that work around the clock.
+We help businesses automate repetitive work, respond to leads faster,
+and build AI-powered workflows that operate around the clock.
 </p>
 
 <div class="buttons">
 
 <a href="#audit" class="btn btn-primary">
-Get Your Free AI Audit
+Get Free AI Audit
 </a>
 
 <a href="#services" class="btn btn-secondary">
@@ -380,8 +551,6 @@ See What We Automate
 </section>
 
 
-<!-- STATS -->
-
 <div class="container">
 
 <div class="stats">
@@ -393,11 +562,11 @@ AI availability
 
 <div class="stat">
 <strong>5+</strong>
-Business automation solutions
+Automation solutions
 </div>
 
 <div class="stat">
-<strong>∞</strong>
+<strong>âˆž</strong>
 Scalable workflows
 </div>
 
@@ -406,135 +575,71 @@ Scalable workflows
 </div>
 
 
-<!-- SERVICES -->
-
 <section id="services">
 
 <div class="container">
 
 <div class="section-title">
 
-<h2>
-What Can We Automate?
-</h2>
+<h2>What Can We Automate?</h2>
 
 <p>
-Stop spending your team's time on repetitive work.
+Turn repetitive business tasks into automated workflows.
 </p>
 
 </div>
-
 
 <div class="services">
 
+<div class="service">
+<div class="icon">AI</div>
+<h3>AI Sales Agents</h3>
+<p>
+Qualify leads, answer common questions and help move prospects
+toward your sales team.
+</p>
+</div>
 
 <div class="service">
-
-<div class="icon">
-AI
-</div>
-
-<h3>
-AI Sales Agents
-</h3>
-
+<div class="icon">WA</div>
+<h3>WhatsApp Automation</h3>
 <p>
-Automatically qualify leads, answer questions and help
-move prospects toward a sale.
+Automate enquiries, lead capture, follow-ups and appointment requests.
 </p>
-
 </div>
-
 
 <div class="service">
-
-<div class="icon">
-WA
-</div>
-
-<h3>
-WhatsApp Automation
-</h3>
-
+<div class="icon">LF</div>
+<h3>Lead Follow-Up</h3>
 <p>
-Automate customer conversations, lead capture,
-follow-ups and appointment requests.
+Automatically organize and follow up with leads so opportunities
+do not get forgotten.
 </p>
-
 </div>
-
 
 <div class="service">
-
-<div class="icon">
-LF
-</div>
-
-<h3>
-Lead Follow-Up
-</h3>
-
+<div class="icon">VO</div>
+<h3>AI Voice Agents</h3>
 <p>
-Stop losing leads because nobody followed up.
-Your AI can handle the first response.
+Build AI-assisted voice workflows for routine customer interactions.
 </p>
-
 </div>
-
 
 <div class="service">
-
-<div class="icon">
-VO
-</div>
-
-<h3>
-AI Voice Agents
-</h3>
-
+<div class="icon">DOC</div>
+<h3>Document Automation</h3>
 <p>
-AI-powered voice workflows can handle routine calls
-and customer qualification.
+Extract useful information from invoices, forms and business documents.
 </p>
-
 </div>
-
 
 <div class="service">
-
-<div class="icon">
-DOC
-</div>
-
-<h3>
-Document Automation
-</h3>
-
+<div class="icon">BI</div>
+<h3>Business AI Assistant</h3>
 <p>
-Extract information from invoices, forms and documents
-without repetitive data entry.
+Give your team an AI assistant that understands your business workflows.
 </p>
-
 </div>
-
-
-<div class="service">
-
-<div class="icon">
-BI
-</div>
-
-<h3>
-Business AI Assistant
-</h3>
-
-<p>
-Give your team an AI assistant that can work with
-your business knowledge and processes.
-</p>
-
-</div>
-
 
 </div>
 
@@ -543,80 +648,59 @@ your business knowledge and processes.
 </section>
 
 
-<!-- HOW IT WORKS -->
-
 <section>
 
 <div class="container">
 
 <div class="section-title">
 
-<h2>
-How It Works
-</h2>
+<h2>How It Works</h2>
 
 <p>
-Simple for you. Powerful behind the scenes.
+Simple for the customer. Powerful behind the scenes.
 </p>
 
 </div>
-
 
 <div class="steps">
 
-
 <div class="step">
 
-<div class="number">
-1
-</div>
+<div class="number">1</div>
 
-<h3>
-Tell Us Your Problem
-</h3>
+<h3>Tell Us Your Problem</h3>
 
 <p>
-Tell us what repetitive work is wasting your team's time.
+Submit your business problem through the free audit form.
 </p>
 
 </div>
 
-
 <div class="step">
 
-<div class="number">
-2
-</div>
+<div class="number">2</div>
 
-<h3>
-We Design The Automation
-</h3>
+<h3>AI Analyzes It</h3>
 
 <p>
-We identify the workflow and design an AI-powered
-solution around your business.
+Our backend sends the enquiry to the AI system and generates
+an automation recommendation.
 </p>
 
 </div>
 
-
 <div class="step">
 
-<div class="number">
-3
-</div>
+<div class="number">3</div>
 
-<h3>
-AI Goes To Work
-</h3>
+<h3>We Contact You</h3>
 
 <p>
-Your automation handles the workflow while you
-focus on growing your business.
+We review the recommendation and discuss the right automation
+for your business.
 </p>
 
 </div>
-
 
 </div>
 
@@ -625,49 +709,35 @@ focus on growing your business.
 </section>
 
 
-<!-- PRICING -->
-
 <section>
 
 <div class="container">
 
 <div class="section-title">
 
-<h2>
-Simple Packages
-</h2>
+<h2>Automation Packages</h2>
 
 <p>
-Start small. Scale when the automation proves its value.
+Start with a small workflow and expand when it proves useful.
 </p>
 
 </div>
-
 
 <div class="pricing">
 
-
 <div class="price-card">
 
-<h3>
-Starter
-</h3>
+<h3>Starter</h3>
 
-<div class="price">
-₹4,999
-</div>
+<div class="price">â‚¹4,999</div>
 
-<p>
-One-time setup
-</p>
+<p>One-time setup</p>
 
 <ul>
-
-<li>✓ 1 automation workflow</li>
-<li>✓ AI lead handling</li>
-<li>✓ Basic integration</li>
-<li>✓ Initial setup</li>
-
+<li>âœ“ 1 automation workflow</li>
+<li>âœ“ AI lead handling</li>
+<li>âœ“ Basic integration</li>
+<li>âœ“ Initial setup</li>
 </ul>
 
 <a href="#audit" class="btn btn-primary">
@@ -677,27 +747,23 @@ Request Audit
 </div>
 
 
-<div class="price-card">
+<div class="price-card featured">
 
-<h3>
-Growth
-</h3>
-
-<div class="price">
-₹14,999
+<div class="badge">
+MOST POPULAR
 </div>
 
-<p>
-One-time setup
-</p>
+<h3>Growth</h3>
+
+<div class="price">â‚¹14,999</div>
+
+<p>One-time setup</p>
 
 <ul>
-
-<li>✓ Multiple AI workflows</li>
-<li>✓ Lead automation</li>
-<li>✓ WhatsApp integration</li>
-<li>✓ Ongoing optimization</li>
-
+<li>âœ“ Multiple AI workflows</li>
+<li>âœ“ Lead automation</li>
+<li>âœ“ WhatsApp integration</li>
+<li>âœ“ Workflow optimization</li>
 </ul>
 
 <a href="#audit" class="btn btn-primary">
@@ -706,15 +772,12 @@ Talk About Your Business
 
 </div>
 
-
 </div>
 
 </div>
 
 </section>
 
-
-<!-- AUDIT FORM -->
 
 <section id="audit">
 
@@ -727,8 +790,8 @@ Get Your Free AI Automation Audit
 </h2>
 
 <p>
-Tell us about your business. We'll identify where AI
-automation could save time or capture more opportunities.
+Tell us what is slowing your business down. Our AI system will analyze
+your enquiry and generate an automation recommendation.
 </p>
 
 
@@ -767,14 +830,14 @@ required
 ></textarea>
 
 <button
-id="submitButton"
 type="submit"
+id="submitButton"
+class="btn btn-primary"
 >
 Get My Free AI Automation Audit
 </button>
 
 </form>
-
 
 <div id="message"></div>
 
@@ -786,229 +849,510 @@ Get My Free AI Automation Audit
 
 
 <footer>
-
-© 2026 AutoPilot AI · AI Automation for Modern Businesses
-
+Â© 2026 AutoPilot AI Â· AI Automation for Modern Businesses
 </footer>
 
 
 <script>
 
-/*
-==================================================
-RENDER BACKEND
-==================================================
-*/
-
 const API_URL =
-    "https://ai-agent-control-tower.onrender.com";
-
-
-/*
-==================================================
-FORM
-==================================================
-*/
+"https://ai-agent-control-tower.onrender.com";
 
 const form =
-    document.getElementById("leadForm");
+document.getElementById("leadForm");
 
 const message =
-    document.getElementById("message");
+document.getElementById("message");
 
 const submitButton =
-    document.getElementById("submitButton");
+document.getElementById("submitButton");
 
 
-/*
-==================================================
-SUBMIT LEAD
-==================================================
-*/
+form.addEventListener("submit", async function(event){
 
-form.addEventListener(
-    "submit",
-    async function(event){
+    event.preventDefault();
 
-        event.preventDefault();
+    const name =
+    document.getElementById("name").value.trim();
 
+    const phone =
+    document.getElementById("phone").value.trim();
 
-        const name =
-            document
-            .getElementById("name")
-            .value
-            .trim();
+    const email =
+    document.getElementById("email").value.trim();
 
+    const business =
+    document.getElementById("business").value.trim();
 
-        const phone =
-            document
-            .getElementById("phone")
-            .value
-            .trim();
+    const requirement =
+    document.getElementById("requirement").value.trim();
 
 
-        const email =
-            document
-            .getElementById("email")
-            .value
-            .trim();
+    if(!name || !phone || !requirement){
+
+        message.className = "error";
+
+        message.textContent =
+        "Please enter your name, phone number and requirement.";
+
+        return;
+    }
 
 
-        const business =
-            document
-            .getElementById("business")
-            .value
-            .trim();
+    submitButton.disabled = true;
+
+    submitButton.textContent =
+    "Sending...";
+
+    message.className = "loading";
+
+    message.textContent =
+    "Sending your request to AutoPilot AI...";
 
 
-        const requirement =
-            document
-            .getElementById("requirement")
-            .value
-            .trim();
-
+    try{
 
         /*
-        Basic validation
+        IMPORTANT:
+        This exactly matches the backend endpoint
+        that you already tested successfully.
         */
 
-        if(!name || !phone || !requirement){
+        const params = new URLSearchParams();
 
-            message.className = "error";
+        params.append("name", name);
+        params.append("phone", phone);
+        params.append("email", email);
+        params.append("business", business);
+        params.append("requirement", requirement);
 
-            message.textContent =
-                "Please fill in your name, phone and requirement.";
 
-            return;
+        const url =
+        API_URL +
+        "/leads?" +
+        params.toString();
+
+
+        console.log("Submitting lead:", url);
+
+
+        const response =
+        await fetch(url, {
+            method:"POST",
+            headers:{
+                "Accept":"application/json"
+            }
+        });
+
+
+        const responseText =
+        await response.text();
+
+
+        console.log(
+            "Backend status:",
+            response.status
+        );
+
+        console.log(
+            "Backend response:",
+            responseText
+        );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "Backend returned HTTP " +
+                response.status +
+                ": " +
+                responseText
+            );
         }
 
 
-        /*
-        Show loading state
-        */
-
-        submitButton.disabled = true;
-
-        submitButton.textContent =
-            "Submitting...";
-
-        message.className = "";
-
-        message.textContent =
-            "Submitting your request...";
-
-
-        /*
-        Create query parameters
-        */
-
-        const params =
-            new URLSearchParams();
-
-        params.set("name",name);
-        params.set("phone",phone);
-        params.set("email",email);
-        params.set("business",business);
-        params.set("requirement",requirement);
-
+        let data;
 
         try{
 
-            /*
-            Send lead to Render backend
-            */
+            data = JSON.parse(responseText);
 
-            const response =
-                await fetch(
-                    API_URL +
-                    "/leads?" +
-                    params.toString(),
-                    {
-                        method:"POST"
-                    }
-                );
+        }catch{
+
+            data = {
+                raw:responseText
+            };
+
+        }
 
 
-            /*
-            Handle server error
-            */
+        console.log(
+            "Lead successfully created:",
+            data
+        );
 
-            if(!response.ok){
 
-                const errorText =
-                    await response.text();
+        message.className =
+        "success";
 
-                throw new Error(
-                    "Server returned " +
-                    response.status +
-                    ": " +
-                    errorText
-                );
+        message.textContent =
+        "âœ“ Request received! We'll review your business automation opportunity and contact you soon.";
+
+
+        form.reset();
+
+
+    }catch(error){
+
+        console.error(
+            "FULL ERROR:",
+            error
+        );
+
+
+        message.className =
+        "error";
+
+        message.textContent =
+        "Unable to connect to the automation server. Please try again in a moment.";
+
+    }finally{
+
+        submitButton.disabled =
+        false;
+
+        submitButton.textContent =
+        "Get My Free AI Automation Audit";
+
+    }
+
+});
+
+</script>
+
+<!-- ===== AUTOPILOT AI CUSTOMER AGENT ===== -->
+
+<style>
+#ai-agent-button {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    border: none;
+    background: #111827;
+    color: white;
+    font-size: 26px;
+    cursor: pointer;
+    z-index: 99999;
+}
+
+#ai-agent-box {
+    display: none;
+    position: fixed;
+    right: 25px;
+    bottom: 100px;
+    width: 420px;
+    height: 560px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    overflow: hidden;
+    z-index: 99999;
+    font-family: Arial, sans-serif;
+}
+
+.ai-header {
+    background: #111827;
+    color: white;
+    padding: 18px;
+}
+
+.ai-header strong {
+    display: block;
+    font-size: 17px;
+}
+
+.ai-header span {
+    font-size: 12px;
+    opacity: .75;
+}
+
+#ai-messages {
+    height: 390px;
+    overflow-y: auto;
+    padding: 15px;
+    background: #f8fafc;
+}
+
+.ai-msg {
+    max-width: 85%;
+    padding: 11px 13px;
+    margin: 8px 0;
+    border-radius: 14px;
+    line-height: 1.45;
+    font-size: 14px;
+}
+
+.ai-bot {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.ai-user {
+    background: #111827;
+    color: white;
+    margin-left: auto;
+}
+
+.ai-input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    min-height: 72px;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+}
+
+#ai-input {
+    display: block !important;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 48px;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    padding: 0 15px;
+    font-size: 15px;
+    color: #111827;
+    background: #ffffff;
+    outline: none;
+    pointer-events: auto !important;
+}
+
+#ai-input:focus {
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+}
+
+#ai-send {
+    display: block !important;
+    flex: 0 0 auto;
+    height: 48px;
+    min-width: 82px;
+    border: none;
+    border-radius: 14px;
+    background: #111827;
+    color: #ffffff;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto !important;
+}
+
+#ai-send:hover {
+    opacity: .9;
+}
+
+#ai-send:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+@media(max-width:500px) {
+    #ai-agent-box {
+        right: 10px;
+        bottom: 90px;
+        width: calc(100vw - 20px);
+        height: calc(100vh - 120px);
+    }
+
+    #ai-messages {
+        height: calc(100vh - 235px);
+    }
+}
+</style>
+
+<button id="ai-agent-button" type="button">✦</button>
+
+<div id="ai-agent-box">
+
+    <div class="ai-header">
+        <strong>AutoPilot AI Assistant</strong>
+        <span>AI-powered business automation advisor</span>
+    </div>
+
+    <div id="ai-messages">
+        <div class="ai-msg ai-bot">
+Hi! 👋 I'm the AutoPilot AI assistant.
+
+Tell me what you want to automate in your business and I'll help you find the right solution.
+        </div>
+    </div>
+
+    <div class="ai-input-area">
+        <input
+            id="ai-input"
+            type="text"
+            placeholder="Ask about automation..."
+            autocomplete="off"
+        >
+        <button id="ai-send" type="button">Send</button>
+    </div>
+
+</div>
+
+<script>
+(function () {
+
+    console.log("AutoPilot Customer Agent loaded");
+
+    const button = document.getElementById("ai-agent-button");
+    const box = document.getElementById("ai-agent-box");
+    const input = document.getElementById("ai-input");
+    const send = document.getElementById("ai-send");
+    const messages = document.getElementById("ai-messages");
+
+    if (!button || !box || !input || !send || !messages) {
+        console.error("Customer Agent elements missing");
+        return;
+    }
+
+    let conversation = [];
+
+    button.addEventListener("click", function () {
+
+        if (box.style.display === "block") {
+            box.style.display = "none";
+        } else {
+            box.style.display = "block";
+            setTimeout(function () {
+                input.focus();
+            }, 50);
+        }
+
+    });
+
+    function addMessage(text, type) {
+
+        const div = document.createElement("div");
+
+        div.className =
+            "ai-msg " +
+            (type === "user" ? "ai-user" : "ai-bot");
+
+        div.textContent = text;
+
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+
+        return div;
+    }
+
+    async function sendMessage() {
+
+        const message = input.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        input.value = "";
+
+        addMessage(message, "user");
+
+        conversation.push({
+            role: "user",
+            content: message
+        });
+
+        const typing = addMessage("AI is thinking...", "bot");
+
+        send.disabled = true;
+        input.disabled = true;
+
+        try {
+
+            const response = await fetch("/customer/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: message,
+                    conversation: conversation
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
             }
 
+            const data = await response.json();
 
-            /*
-            Read response
-            */
+            typing.remove();
 
-            const data =
-                await response.json();
+            const reply =
+                data.reply ||
+                "I couldn't process that request.";
 
+            addMessage(reply, "bot");
 
-            console.log(
-                "Lead created:",
-                data
+            conversation.push({
+                role: "assistant",
+                content: reply
+            });
+
+        } catch (error) {
+
+            console.error("Customer Agent error:", error);
+
+            typing.remove();
+
+            addMessage(
+                "The AI assistant is temporarily unavailable. Please try again.",
+                "bot"
             );
 
+        } finally {
 
-            /*
-            Success message
-            */
-
-            message.className =
-                "success";
-
-            message.textContent =
-                "✓ Thank you! Your AI automation request has been received.";
-
-
-            /*
-            Clear form
-            */
-
-            form.reset();
-
-
-        }
-        catch(error){
-
-            console.error(
-                "Lead submission error:",
-                error
-            );
-
-
-            message.className =
-                "error";
-
-            message.textContent =
-                "Something went wrong. Please try again in a moment.";
-
-        }
-        finally{
-
-            submitButton.disabled =
-                false;
-
-            submitButton.textContent =
-                "Get My Free AI Automation Audit";
+            send.disabled = false;
+            input.disabled = false;
+            input.focus();
 
         }
 
     }
-);
 
+    send.addEventListener("click", sendMessage);
+
+    input.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+
+    });
+
+})();
 </script>
+
+<!-- ===== END AUTOPILOT AI CUSTOMER AGENT ===== --><!-- ===== END AUTOPILOT AI CUSTOMER AGENT ===== -->
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

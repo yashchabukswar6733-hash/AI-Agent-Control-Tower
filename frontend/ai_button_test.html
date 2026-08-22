@@ -1,0 +1,29 @@
+﻿<style>
+#ai-agent-button{
+    position:fixed;
+    right:25px;
+    bottom:25px;
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    border:0;
+    background:#111827;
+    color:white;
+    font-size:30px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 10px 35px rgba(0,0,0,.35);
+    z-index:2147483647;
+}
+
+#ai-agent-button:hover{
+    transform:scale(1.08);
+}
+
+#ai-agent-button::after{
+    content:"AI";
+    font-size:16px;
+}
+</style>
+
+<button id="ai-agent-button" aria-label="Open AI Assistant">✦</button>

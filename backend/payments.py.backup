@@ -1,0 +1,141 @@
+from datetime import datetime
+import uuid
+
+from .database import get_db
+
+
+class PaymentManager:
+
+    def create_payment(
+        self,
+        proposal_id,
+        client_name,
+        company,
+        amount,
+        payment_type="setup",
+        description=""
+    ):
+        payment_id = uuid.uuid4().hex[:8]
+        created_at = datetime.now().isoformat()
+
+        with get_db() as db:
+            db.execute(
+                """
+                INSERT INTO payments
+                (
+                    id,
+                    proposal_id,
+                    client_name,
+                    company,
+                    amount,
+                    payment_type,
+                    status,
+                    notes,
+                    created_at,
+                    paid_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payment_id,
+                    proposal_id,
+                    client_name,
+                    company,
+                    float(amount),
+                    payment_type,
+                    "pending",
+                    description,
+                    created_at,
+                    None
+                )
+            )
+
+        return self.get_payment(payment_id)
+
+
+    def get_payment(self, payment_id):
+
+        with get_db() as db:
+            row = db.execute(
+                """
+                SELECT *
+                FROM payments
+                WHERE id = ?
+                """,
+                (payment_id,)
+            ).fetchone()
+
+        return dict(row) if row else None
+
+
+    def list_payments(self):
+
+        with get_db() as db:
+            rows = db.execute(
+                """
+                SELECT *
+                FROM payments
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+
+    def mark_paid(
+        self,
+        payment_id,
+        payment_method=None,
+        transaction_id=None
+    ):
+
+        payment = self.get_payment(payment_id)
+
+        if not payment:
+            return None
+
+        paid_at = datetime.now().isoformat()
+
+        with get_db() as db:
+            db.execute(
+                """
+                UPDATE payments
+                SET
+                    status = 'paid',
+                    payment_method = ?,
+                    transaction_id = ?,
+                    paid_at = ?
+                WHERE id = ?
+                """,
+                (
+                    payment_method,
+                    transaction_id,
+                    paid_at,
+                    payment_id
+                )
+            )
+
+        return self.get_payment(payment_id)
+
+
+    def cancel_payment(self, payment_id):
+
+        payment = self.get_payment(payment_id)
+
+        if not payment:
+            return None
+
+        with get_db() as db:
+            db.execute(
+                """
+                UPDATE payments
+                SET status = 'cancelled'
+                WHERE id = ?
+                """,
+                (payment_id,)
+            )
+
+        return self.get_payment(payment_id)
+
+
+payment_manager = PaymentManager()

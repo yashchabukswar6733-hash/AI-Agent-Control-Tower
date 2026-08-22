@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+﻿from pathlib import Path
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import json
 
 # ============================================================
@@ -80,10 +82,8 @@ def startup():
 
 @app.get("/")
 def root():
-    return {
-        "message": "AI Agent Control Tower API",
-        "status": "online"
-    }
+    frontend = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
+    return FileResponse(frontend)
 
 
 # ============================================================
@@ -1662,8 +1662,8 @@ automation proposal for {company}.
 
 The proposed investment is:
 
-Setup: ₹{setup_fee:,.0f}
-Monthly: ₹{monthly_fee:,.0f}
+Setup: â‚¹{setup_fee:,.0f}
+Monthly: â‚¹{monthly_fee:,.0f}
 
 The goal is to automate repetitive lead-handling
 processes so your team can respond faster and
@@ -1884,3 +1884,67 @@ def revenue_dashboard():
             "cancelled_transactions": len(cancelled)
         }
     }
+# ===== REAL SALES AGENT =====
+try:
+    from .real_agent import run_real_agent
+except ImportError:
+    run_real_agent = None
+
+
+@app.post("/agent/run/{lead_id}")
+def run_real_agent_endpoint(lead_id: str):
+    if run_real_agent is None:
+        raise HTTPException(
+            status_code=500,
+            detail="real_agent.py could not be imported"
+        )
+
+    try:
+        return run_real_agent(lead_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# ===== CUSTOMER AI AGENT =====
+
+try:
+    from .customer_agent import customer_chat
+except ImportError:
+    customer_chat = None
+
+
+@app.post("/customer/chat")
+def customer_chat_endpoint(payload: dict):
+
+    if customer_chat is None:
+        raise HTTPException(
+            status_code=500,
+            detail="customer_agent.py could not be imported"
+        )
+
+    message = payload.get("message", "")
+    conversation = payload.get("conversation", [])
+
+    try:
+        return customer_chat(
+            message=message,
+            conversation=conversation
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+
+
