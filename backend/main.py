@@ -1,4 +1,4 @@
-﻿from .razorpay_webhook import install as install_razorpay_webhook
+from .razorpay_webhook import install as install_razorpay_webhook
 from backend.database import get_db
 import os
 
@@ -392,6 +392,40 @@ def health():
         "status": "healthy"
     }
 
+
+# ============================================================
+# PUBLIC BUSINESS AUTHENTICATION
+# ============================================================
+
+from .business_service import create_business, login_business, logout
+
+@app.post('/auth/register')
+async def register_business(request: Request):
+    data = await request.json()
+    try:
+        return create_business(str(data.get('business_name','')),str(data.get('owner_name','')),str(data.get('email','')),str(data.get('phone','')),str(data.get('plan','Starter')))
+    except ValueError as e:
+        raise HTTPException(status_code=400,detail=str(e))
+
+@app.post('/auth/login')
+async def login_business_endpoint(request: Request):
+    data = await request.json()
+    try:
+        return login_business(str(data.get('email','')).strip())
+    except ValueError as e:
+        raise HTTPException(status_code=401,detail=str(e))
+
+@app.post('/auth/logout')
+def logout_business(request: Request):
+    authorization=request.headers.get('Authorization','')
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(status_code=401,detail='Business authentication required')
+    logout(authorization[7:].strip())
+    return {'success':True}
+
+@app.get('/auth/me')
+def current_business(request: Request):
+    return {'business':get_current_business(request)}
 
 # ============================================================
 # BUSINESS AUTHENTICATION
