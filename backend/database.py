@@ -1,21 +1,85 @@
-﻿
+﻿from pathlib import Path
 import sqlite3
 import uuid
 from datetime import datetime
-from pathlib import Path
-from contextlib import contextmanager
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 # ============================================================
-# DATABASE CONFIG
+# CONFIGURATION
 # ============================================================
 
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "control_tower.db"
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATABASE_URL = "sqlite:///" + str(BASE_DIR / "saas.db")
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
+Base = declarative_base()
 
 
 # ============================================================
-# HELPERS
+# SQLALCHEMY SESSION
+# ============================================================
+
+def get_session():
+    return SessionLocal()
+
+
+# ============================================================
+# LEGACY SQLITE COMPATIBILITY
+#
+# Existing application modules use:
+#     with get_db() as db:
+#         db.execute(...)
+#
+# Keep that interface working while we migrate modules
+# gradually to SQLAlchemy.
+# ============================================================
+
+def get_db():
+    connection = sqlite3.connect(
+        BASE_DIR / "saas.db",
+        check_same_thread=False,
+    )
+
+    connection.row_factory = sqlite3.Row
+
+    try:
+        yield_or_return = connection
+
+        class DBContext:
+            def __enter__(self):
+                return yield_or_return
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                if exc_type is None:
+                    yield_or_return.commit()
+                else:
+                    yield_or_return.rollback()
+
+                yield_or_return.close()
+
+        return DBContext()
+
+    except Exception:
+        connection.close()
+        raise
+
+
+# ============================================================
+# HELPERS USED BY EXISTING APPLICATION
 # ============================================================
 
 def new_id():
@@ -23,219 +87,141 @@ def new_id():
 
 
 def now():
-    return datetime.now().isoformat()
+    return datetime.utcnow().isoformat()
 
 
 # ============================================================
-# DATABASE CONNECTION
-# ============================================================
-
-@contextmanager
-def get_db():
-
-    connection = sqlite3.connect(DB_PATH)
-
-    connection.row_factory = sqlite3.Row
-
-    try:
-        yield connection
-        connection.commit()
-
-    except Exception:
-        connection.rollback()
-        raise
-
-    finally:
-        connection.close()
-
-
-# ============================================================
-# DATABASE INITIALIZATION
+# EXISTING DATABASE SCHEMA
+#
+# This preserves the tables already used by main.py.
 # ============================================================
 
 def init_db():
 
-    with get_db() as db:
+    db = sqlite3.connect(
+        BASE_DIR / "saas.db",
+        check_same_thread=False,
+    )
 
-        # ----------------------------------------------------
-        # CLIENTS
-        # ----------------------------------------------------
+    db.row_factory = sqlite3.Row
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS clients (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                company TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
+    cursor = db.cursor()
 
-        # ----------------------------------------------------
-        # AGENTS
-        # ----------------------------------------------------
+    cursor.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS clients (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            company TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            created_at TEXT NOT NULL
+        );
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS agents (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                role TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
+        CREATE TABLE IF NOT EXISTS agents (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            created_at TEXT NOT NULL
+        );
 
-        # ----------------------------------------------------
-        # TASKS
-        # ----------------------------------------------------
+        CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
+            agent TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            result TEXT,
+            created_at TEXT NOT NULL
+        );
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS tasks (
-                id TEXT PRIMARY KEY,
-                agent TEXT NOT NULL,
-                description TEXT NOT NULL,
-                status TEXT NOT NULL,
-                result TEXT,
-                created_at TEXT NOT NULL
-            )
-        """)
+        CREATE TABLE IF NOT EXISTS workflows (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL,
+            goal TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            result TEXT,
+            created_at TEXT NOT NULL
+        );
 
-        # ----------------------------------------------------
-        # WORKFLOWS
-        # ----------------------------------------------------
+        CREATE TABLE IF NOT EXISTS workflow_steps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workflow_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            result TEXT
+        );
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS workflows (
-                id TEXT PRIMARY KEY,
-                client_id TEXT NOT NULL,
-                goal TEXT NOT NULL,
-                status TEXT NOT NULL,
-                result TEXT,
-                created_at TEXT NOT NULL
-            )
-        """)
+        CREATE TABLE IF NOT EXISTS leads (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            email TEXT DEFAULT '',
+            business TEXT DEFAULT '',
+            requirement TEXT DEFAULT '',
+            status TEXT DEFAULT 'new',
+            score INTEGER DEFAULT 0,
+            ai_analysis TEXT DEFAULT '',
+            follow_up TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
 
-        # ----------------------------------------------------
-        # WORKFLOW STEPS
-        # ----------------------------------------------------
+        CREATE TABLE IF NOT EXISTS sales_opportunities (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            stage TEXT DEFAULT 'new',
+            service TEXT DEFAULT '',
+            setup_fee REAL DEFAULT 0,
+            monthly_fee REAL DEFAULT 0,
+            probability INTEGER DEFAULT 10,
+            notes TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS workflow_steps (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                workflow_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                status TEXT NOT NULL,
-                result TEXT
-            )
-        """)
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
 
-        # ----------------------------------------------------
-        # LEADS
-        # ----------------------------------------------------
+        CREATE TABLE IF NOT EXISTS revenue (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT,
+            client_id TEXT,
+            service TEXT,
+            setup_fee REAL DEFAULT 0,
+            monthly_fee REAL DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            payment_date TEXT,
+            created_at TEXT NOT NULL
+        );
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS leads (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                email TEXT,
-                business TEXT,
-                requirement TEXT,
-                status TEXT NOT NULL,
-                score INTEGER,
-                ai_analysis TEXT,
-                follow_up TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT
-            )
-        """)
+        CREATE TABLE IF NOT EXISTS proposals (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT,
+            client_name TEXT NOT NULL,
+            company TEXT NOT NULL,
+            service TEXT NOT NULL,
+            setup_fee REAL DEFAULT 0,
+            monthly_fee REAL DEFAULT 0,
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        """
+    )
 
-        # ----------------------------------------------------
-        # IMPORTANT MIGRATION
-        #
-        # Older Render databases may already have the leads
-        # table without updated_at.
-        # ----------------------------------------------------
+    db.commit()
+    db.close()
 
-        lead_columns = db.execute(
-            "PRAGMA table_info(leads)"
-        ).fetchall()
 
-        lead_column_names = {
-            column["name"] for column in lead_columns
-        }
+# ============================================================
+# INITIALIZE DATABASE
+# ============================================================
 
-        if "updated_at" not in lead_column_names:
-
-            db.execute("""
-                ALTER TABLE leads
-                ADD COLUMN updated_at TEXT
-            """)
-
-            db.execute("""
-                UPDATE leads
-                SET updated_at = created_at
-                WHERE updated_at IS NULL
-            """)
-
-        # ----------------------------------------------------
-        # PROPOSALS
-        # ----------------------------------------------------
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS proposals (
-                id TEXT PRIMARY KEY,
-                lead_id TEXT,
-                client_name TEXT NOT NULL,
-                company TEXT NOT NULL,
-                service TEXT NOT NULL,
-                setup_fee REAL NOT NULL,
-                monthly_fee REAL NOT NULL,
-                description TEXT,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
-
-        # ----------------------------------------------------
-        # PAYMENTS
-        # ----------------------------------------------------
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS payments (
-                id TEXT PRIMARY KEY,
-                proposal_id TEXT NOT NULL,
-                client_name TEXT NOT NULL,
-                company TEXT NOT NULL,
-                amount REAL NOT NULL,
-                payment_type TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
-
-        # ----------------------------------------------------
-        # DEFAULT AGENT
-        # ----------------------------------------------------
-
-        existing_agent = db.execute(
-            "SELECT id FROM agents LIMIT 1"
-        ).fetchone()
-
-        if not existing_agent:
-
-            db.execute(
-                """
-                INSERT INTO agents
-                (id, name, role, status, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    new_id(),
-                    "Research Agent",
-                    "Research",
-                    "active",
-                    now()
-                )
-            )
-
+init_db()

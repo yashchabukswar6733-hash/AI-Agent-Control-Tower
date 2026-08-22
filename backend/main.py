@@ -42,6 +42,11 @@ from .proposals import (
 # ============================================================
 
 from .payments import payment_manager
+from .api.auth import router as auth_router
+from .api.whatsapp import router as whatsapp_router
+from .api.business import router as business_router
+from .api.conversations import router as conversations_router
+from .api.business_dashboard import router as dashboard_router
 
 
 # ============================================================
@@ -52,6 +57,13 @@ app = FastAPI(
     title="AI Agent Control Tower",
     version="1.0.0"
 )
+
+
+app.include_router(auth_router)
+app.include_router(whatsapp_router)
+app.include_router(business_router)
+app.include_router(conversations_router)
+app.include_router(dashboard_router)
 
 
 # ============================================================
